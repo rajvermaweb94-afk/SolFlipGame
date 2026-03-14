@@ -6,248 +6,416 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="SolFlip">
+<meta name="theme-color" content="#060a12">
 <title>SolFlip</title>
+<link rel="manifest" href="/manifest.json">
 <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&family=Orbitron:wght@700;900&family=Syne:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#060a12;--panel:#0c1422;--panel2:#0f1828;--border:#172034;--border2:#1e2e48;
-  --green:#00f5a0;--green2:#00c47d;--gold:#f5c542;--red:#ff4d6d;--blue:#38bdf8;
-  --sgreen:#14f195;--spurple:#9945ff;--text:#e2eaf8;--text2:#7090b8;--text3:#334d6e;
-  --hdr:52px;--dock:340px}
-*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-html,body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;
-  height:100%;overflow:hidden;overscroll-behavior:none}
-body::before{content:'';position:fixed;inset:0;
-  background:radial-gradient(ellipse 80% 40% at 50% 0%,rgba(153,69,255,.08) 0%,transparent 60%);
-  pointer-events:none;z-index:0}
+:root{
+  --bg:#060a12;--panel:#0c1422;--panel2:#0f1828;
+  --border:#172034;--border2:#1e2e48;
+  --green:#00f5a0;--green2:#00c47d;
+  --gold:#f5c542;--red:#ff4d6d;--blue:#38bdf8;
+  --sgreen:#14f195;--spurple:#9945ff;
+  --text:#e2eaf8;--text2:#7090b8;--text3:#334d6e;
+  --hdr:54px;
+  --nav:56px;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+html{height:100%;overflow:hidden}
+body{
+  background:var(--bg);color:var(--text);
+  font-family:'Syne',sans-serif;
+  height:100%;overflow:hidden;
+  overscroll-behavior:none;
+  position:fixed;width:100%;
+}
+body::before{
+  content:'';position:fixed;inset:0;
+  background:radial-gradient(ellipse 100% 50% at 50% 0%,rgba(153,69,255,.07) 0%,transparent 60%);
+  pointer-events:none;z-index:0;
+}
 
-@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(1.4)}}
+/* ── ANIMATIONS ── */
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(1.5)}}
 @keyframes spinning{to{transform:rotate(360deg)}}
-@keyframes msgIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+@keyframes msgIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
 @keyframes dotPop{from{transform:scale(0)}to{transform:scale(1)}}
-@keyframes coinSpin{0%{transform:rotateY(0) translateY(0)}30%{transform:rotateY(900deg) translateY(-40px) scale(1.08)}70%{transform:rotateY(1350deg) translateY(-12px)}100%{transform:rotateY(var(--end-rot))}}
-@keyframes resultPop{from{transform:scale(.5);opacity:0}to{transform:scale(1);opacity:1}}
+@keyframes coinSpin{
+  0%{transform:rotateY(0) translateY(0) scale(1)}
+  25%{transform:rotateY(720deg) translateY(-50px) scale(1.1)}
+  70%{transform:rotateY(1260deg) translateY(-15px) scale(1.02)}
+  100%{transform:rotateY(var(--end-rot)) translateY(0) scale(1)}
+}
+@keyframes resultPop{from{transform:scale(.4) translateY(20px);opacity:0}to{transform:scale(1) translateY(0);opacity:1}}
 @keyframes gs{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
-@keyframes floatUp{0%{opacity:1;transform:translateY(0)}100%{opacity:0;transform:translateY(-100px)}}
-@keyframes slideUp{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}
-@keyframes tabIn{from{opacity:0;transform:translateX(10px)}to{opacity:1;transform:none}}
+@keyframes floatUp{0%{opacity:1;transform:translateY(0) scale(1)}100%{opacity:0;transform:translateY(-120px) scale(.4)}}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes winPulse{0%,100%{box-shadow:0 0 0 rgba(20,241,149,0)}50%{box-shadow:0 0 30px rgba(20,241,149,.4)}}
 
 /* ── HEADER ── */
-.hdr{position:fixed;top:0;left:0;right:0;height:var(--hdr);z-index:200;
-  background:rgba(6,10,18,.97);backdrop-filter:blur(20px);
+.hdr{
+  position:fixed;top:0;left:0;right:0;
+  height:var(--hdr);z-index:300;
+  background:rgba(6,10,18,.98);
+  backdrop-filter:blur(20px);
   border-bottom:1px solid var(--border);
-  display:flex;align-items:center;justify-content:space-between;padding:0 14px}
+  display:flex;align-items:center;
+  justify-content:space-between;
+  padding:0 16px;
+}
 .logo{display:flex;align-items:center;gap:8px;text-decoration:none}
-.logo-icon{width:28px;height:28px;border-radius:7px;
+.logo-icon{
+  width:30px;height:30px;border-radius:8px;
   background:linear-gradient(135deg,var(--spurple),var(--sgreen));
   display:flex;align-items:center;justify-content:center;
-  box-shadow:0 0 12px rgba(153,69,255,.5);flex-shrink:0}
-.logo-icon svg{width:15px;height:15px}
-.logo-text{font-family:'Orbitron',monospace;font-size:16px;font-weight:900;letter-spacing:.05em}
-.logo-text b{color:var(--text)}.logo-text span{color:var(--sgreen)}
+  box-shadow:0 0 14px rgba(153,69,255,.5);flex-shrink:0;
+}
+.logo-icon svg{width:16px;height:16px}
+.logo-text{font-family:'Orbitron',monospace;font-size:17px;font-weight:900;letter-spacing:.05em}
+.logo-text b{color:var(--text)}.logo-text s2{color:var(--sgreen);font-style:normal}
 .hdr-r{display:flex;align-items:center;gap:7px}
-.net-pill{padding:2px 8px;border-radius:20px;font-size:9px;font-weight:700;letter-spacing:.1em;
-  text-transform:uppercase;font-family:'Rajdhani',sans-serif;
-  background:rgba(20,241,149,.1);border:1px solid rgba(20,241,149,.25);color:var(--sgreen)}
-.btn-connect{display:flex;align-items:center;gap:5px;padding:7px 14px;
-  background:linear-gradient(135deg,var(--spurple),#6d28d9);border:none;border-radius:8px;
-  color:#fff;font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;letter-spacing:.06em;
-  cursor:pointer;box-shadow:0 2px 12px rgba(153,69,255,.4);white-space:nowrap}
+.net-pill{
+  padding:3px 9px;border-radius:20px;font-size:9px;font-weight:700;
+  letter-spacing:.1em;text-transform:uppercase;font-family:'Rajdhani',sans-serif;
+  background:rgba(20,241,149,.1);border:1px solid rgba(20,241,149,.3);color:var(--sgreen);
+}
+.btn-connect{
+  display:flex;align-items:center;gap:5px;padding:8px 15px;
+  background:linear-gradient(135deg,var(--spurple),#6d28d9);
+  border:none;border-radius:9px;color:#fff;
+  font-family:'Rajdhani',sans-serif;font-size:12.5px;font-weight:700;
+  letter-spacing:.06em;cursor:pointer;
+  box-shadow:0 2px 14px rgba(153,69,255,.45);white-space:nowrap;
+}
 .btn-connect.connected{background:linear-gradient(135deg,var(--green2),#007a50)}
 .btn-connect svg{width:12px;height:12px;flex-shrink:0}
 
-/* ── SCROLL AREA (between header and dock) ── */
-.scroll-area{position:fixed;top:var(--hdr);left:0;right:0;bottom:var(--dock);
-  overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;z-index:1}
-.scroll-area::-webkit-scrollbar{display:none}
+/* ── PAGE SYSTEM ── */
+/* Each "page" fills the screen between header and bottom nav */
+.page{
+  position:fixed;
+  top:var(--hdr);left:0;right:0;
+  bottom:var(--nav);
+  overflow-y:auto;overflow-x:hidden;
+  -webkit-overflow-scrolling:touch;
+  z-index:1;
+  display:none;
+  background:var(--bg);
+}
+.page.active{display:block}
+.page::-webkit-scrollbar{display:none}
 
-/* ── TAB SWITCHER (inside scroll area top) ── */
-.tab-bar{display:flex;background:var(--panel);border-bottom:1px solid var(--border);
-  position:sticky;top:0;z-index:10}
-.tab-btn{flex:1;padding:11px 6px;border:none;background:transparent;
-  color:var(--text3);font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;
-  letter-spacing:.08em;text-transform:uppercase;cursor:pointer;transition:all .15s;
-  border-bottom:2px solid transparent}
-.tab-btn.active{color:var(--sgreen);border-bottom-color:var(--sgreen)}
+/* ── BOTTOM NAV ── */
+.bottom-nav{
+  position:fixed;bottom:0;left:0;right:0;
+  height:var(--nav);z-index:300;
+  background:rgba(6,10,18,.98);
+  backdrop-filter:blur(20px);
+  border-top:1px solid var(--border2);
+  display:grid;grid-template-columns:1fr 1fr 1fr;
+}
+.nav-btn{
+  display:flex;flex-direction:column;align-items:center;
+  justify-content:center;gap:3px;
+  border:none;background:transparent;
+  color:var(--text3);cursor:pointer;
+  font-family:'Rajdhani',sans-serif;font-size:10px;
+  font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+  transition:color .15s;padding:0;
+}
+.nav-btn.active{color:var(--sgreen)}
+.nav-btn svg{width:20px;height:20px;stroke-width:1.8}
+.nav-dot{
+  position:absolute;top:8px;right:calc(50% - 16px);
+  width:7px;height:7px;background:var(--red);
+  border-radius:50%;border:2px solid var(--bg);
+  display:none;
+}
+.nav-btn.has-notif .nav-dot{display:block}
 
-/* ── TAB CONTENT ── */
-.tab-pane{display:none;animation:tabIn .2s ease}
-.tab-pane.active{display:block}
-
-/* ── GAME TAB ── */
-/* Hist bar */
-.hist-bar{padding:8px 12px;display:flex;align-items:center;gap:5px;flex-wrap:wrap;
-  background:var(--panel);border-bottom:1px solid var(--border)}
-.hb-dot{width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;
-  font-size:8.5px;font-weight:700;font-family:'Rajdhani',sans-serif;flex-shrink:0;animation:dotPop .2s ease}
+/* ═══════════════════════════
+   PAGE 1 — GAME
+═══════════════════════════ */
+/* Live history strip */
+.hist-strip{
+  padding:8px 14px;
+  background:var(--panel);
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:5px;
+  flex-wrap:wrap;min-height:42px;
+}
+.live-dot{width:7px;height:7px;background:var(--red);border-radius:50%;box-shadow:0 0 6px var(--red);flex-shrink:0}
+.live-lbl{font-size:9.5px;color:var(--red);font-family:'Rajdhani',sans-serif;font-weight:700;letter-spacing:.1em;margin-right:4px}
+.hb-dot{
+  width:21px;height:21px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:8.5px;font-weight:700;font-family:'Rajdhani',sans-serif;
+  flex-shrink:0;animation:dotPop .2s ease;
+}
 .hb-dot.H{background:rgba(245,197,66,.18);color:var(--gold);border:1px solid rgba(245,197,66,.35)}
 .hb-dot.T{background:rgba(20,241,149,.12);color:var(--sgreen);border:1px solid rgba(20,241,149,.3)}
-.hb-stats{margin-left:auto;display:flex;gap:8px;font-size:10.5px;color:var(--text3);
-  font-family:'Rajdhani',sans-serif;font-weight:600;flex-shrink:0}
+.hb-stats{margin-left:auto;display:flex;gap:8px;font-size:10px;color:var(--text3);font-family:'Rajdhani',sans-serif;font-weight:600;flex-shrink:0}
 
 /* Coin stage */
-.coin-stage{height:220px;background:linear-gradient(180deg,#090f1e 0%,#060a12 100%);
+.coin-stage{
+  height:240px;
+  background:linear-gradient(180deg,#090f1e 0%,#060a12 100%);
   display:flex;align-items:center;justify-content:center;
-  perspective:700px;position:relative;overflow:hidden;border-bottom:1px solid var(--border)}
-.coin-stage::after{content:'';position:absolute;bottom:0;left:50%;transform:translateX(-50%);
-  width:160px;height:35px;border-radius:50%;
-  background:radial-gradient(ellipse,rgba(153,69,255,.2) 0%,transparent 70%);pointer-events:none}
-.coin-glow{position:absolute;width:180px;height:180px;border-radius:50%;
-  background:radial-gradient(circle,rgba(153,69,255,.1) 0%,transparent 70%);pointer-events:none;transition:all .3s}
-.coin-wrapper{transform-style:preserve-3d;user-select:none}
-.coin{width:140px;height:140px;transform-style:preserve-3d;
-  transition:transform 1.6s cubic-bezier(.23,1,.32,1);position:relative}
-.face{position:absolute;width:100%;height:100%;border-radius:50%;backface-visibility:hidden;
-  display:flex;align-items:center;justify-content:center;flex-direction:column}
-.face-h{background:radial-gradient(circle at 38% 32%,#f8de78,#d49610 55%,#8a5e00 90%);
-  box-shadow:inset -5px -5px 14px rgba(0,0,0,.45),inset 3px 3px 8px rgba(255,255,255,.22),
-             0 0 30px rgba(212,150,10,.6),0 0 60px rgba(212,150,10,.2);border:2px solid #e0ae1a}
-.face-t{background:radial-gradient(circle at 38% 32%,#22f8ab,#10a06a 55%,#065e3c 90%);
-  box-shadow:inset -5px -5px 14px rgba(0,0,0,.45),inset 3px 3px 8px rgba(255,255,255,.22),
-             0 0 30px rgba(16,160,106,.6),0 0 60px rgba(16,160,106,.2);
-  border:2px solid #12d68a;transform:rotateY(180deg)}
+  perspective:700px;position:relative;overflow:hidden;
+  border-bottom:1px solid var(--border);
+}
+.coin-stage::after{
+  content:'';position:absolute;bottom:0;left:50%;transform:translateX(-50%);
+  width:160px;height:30px;border-radius:50%;
+  background:radial-gradient(ellipse,rgba(153,69,255,.2) 0%,transparent 70%);
+  pointer-events:none;
+}
+.coin-glow{
+  position:absolute;width:190px;height:190px;border-radius:50%;
+  background:radial-gradient(circle,rgba(153,69,255,.1) 0%,transparent 70%);
+  pointer-events:none;transition:background .4s;
+}
+.coin-wrapper{transform-style:preserve-3d;user-select:none;transition:transform .08s linear}
+.coin{
+  width:145px;height:145px;transform-style:preserve-3d;
+  transition:transform 1.8s cubic-bezier(.23,1,.32,1);position:relative;
+}
+.face{
+  position:absolute;width:100%;height:100%;border-radius:50%;
+  backface-visibility:hidden;display:flex;align-items:center;
+  justify-content:center;flex-direction:column;
+}
+.face-h{
+  background:radial-gradient(circle at 35% 30%,#fce97a,#d49610 55%,#8a5e00 90%);
+  box-shadow:inset -5px -5px 15px rgba(0,0,0,.5),inset 3px 3px 8px rgba(255,255,255,.25),
+             0 0 32px rgba(212,150,10,.65),0 0 60px rgba(212,150,10,.2);
+  border:2.5px solid #e8b820;
+}
+.face-t{
+  background:radial-gradient(circle at 35% 30%,#26fdb5,#10a06a 55%,#065e3c 90%);
+  box-shadow:inset -5px -5px 15px rgba(0,0,0,.5),inset 3px 3px 8px rgba(255,255,255,.25),
+             0 0 32px rgba(16,160,106,.65),0 0 60px rgba(16,160,106,.2);
+  border:2.5px solid #14d88e;transform:rotateY(180deg);
+}
 .sol-bars{display:flex;flex-direction:column;gap:6px;align-items:center}
-.sol-bar{height:6px;border-radius:3px;background:rgba(0,0,0,.55)}
+.sol-bar{height:6px;border-radius:3px;background:rgba(0,0,0,.6)}
 .sol-bar:nth-child(1){width:52px;clip-path:polygon(7px 0,100% 0,calc(100% - 7px) 100%,0 100%)}
-.sol-bar:nth-child(2){width:44px;clip-path:polygon(7px 0,100% 0,calc(100% - 7px) 100%,0 100%)}
+.sol-bar:nth-child(2){width:43px;clip-path:polygon(7px 0,100% 0,calc(100% - 7px) 100%,0 100%)}
 .sol-bar:nth-child(3){width:52px;clip-path:polygon(7px 0,100% 0,calc(100% - 7px) 100%,0 100%)}
-.coin-lbl{font-family:'Orbitron',monospace;font-size:6.5px;font-weight:700;letter-spacing:.2em;color:rgba(0,0,0,.6);margin-top:4px}
-.tails-sym{font-size:40px;line-height:1}
+.coin-lbl{font-family:'Orbitron',monospace;font-size:6.5px;font-weight:700;letter-spacing:.2em;color:rgba(0,0,0,.65);margin-top:5px}
+.tails-sym{font-size:42px;line-height:1}
 .tails-lbl{font-family:'Orbitron',monospace;font-size:7px;font-weight:700;letter-spacing:.15em;color:rgba(0,0,0,.65);margin-top:3px}
-.coin.flipping{animation:coinSpin 1.7s cubic-bezier(.4,0,.2,1) forwards}
+.coin.flipping{animation:coinSpin 1.9s cubic-bezier(.4,0,.2,1) forwards}
 .coin.show-t{transform:rotateY(180deg)}
-.result-ov{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
-  background:rgba(6,10,18,.82);backdrop-filter:blur(8px);opacity:0;pointer-events:none;
-  transition:opacity .3s;flex-direction:column;gap:5px}
+
+/* Result overlay */
+.result-ov{
+  position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  background:rgba(6,10,18,.85);backdrop-filter:blur(8px);
+  opacity:0;pointer-events:none;transition:opacity .25s;flex-direction:column;gap:6px;
+}
 .result-ov.show{opacity:1}
-.result-word{font-family:'Orbitron',monospace;font-size:28px;font-weight:900;text-transform:uppercase;animation:resultPop .4s ease}
-.result-word.win{color:var(--sgreen);text-shadow:0 0 24px var(--sgreen)}
-.result-word.lose{color:var(--red);text-shadow:0 0 24px var(--red)}
-.result-sub{font-family:'Rajdhani',sans-serif;font-size:14px;color:var(--text2);font-weight:600;text-align:center;padding:0 16px}
+.result-word{
+  font-family:'Orbitron',monospace;font-size:30px;font-weight:900;
+  text-transform:uppercase;animation:resultPop .35s ease;
+}
+.result-word.win{color:var(--sgreen);text-shadow:0 0 28px var(--sgreen)}
+.result-word.lose{color:var(--red);text-shadow:0 0 28px var(--red)}
+.result-sub{font-family:'Rajdhani',sans-serif;font-size:14px;color:var(--text2);font-weight:600;text-align:center;padding:0 20px}
 
-/* Stats row */
-.m-stats{display:grid;grid-template-columns:1fr 1fr 1fr;background:var(--panel);
-  border-bottom:1px solid var(--border)}
-.m-stat{text-align:center;padding:10px 6px}
-.m-sv{font-family:'Orbitron',monospace;font-size:16px;font-weight:700}
-.m-sv.g{color:var(--sgreen)}.m-sv.r{color:var(--red)}
-.m-sl{font-size:9.5px;color:var(--text3);font-family:'Rajdhani',sans-serif;letter-spacing:.1em;text-transform:uppercase;margin-top:2px}
+/* Session stats */
+.sess-stats{
+  display:grid;grid-template-columns:1fr 1fr 1fr;
+  background:var(--panel);border-bottom:1px solid var(--border);
+}
+.ss{text-align:center;padding:11px 4px}
+.ssv{font-family:'Orbitron',monospace;font-size:17px;font-weight:700}
+.ssv.g{color:var(--sgreen)}.ssv.r{color:var(--red)}
+.ssl{font-size:9px;color:var(--text3);font-family:'Rajdhani',sans-serif;letter-spacing:.1em;text-transform:uppercase;margin-top:2px}
 
-/* History table */
-.hist-wrap{padding:0 10px 12px;background:var(--panel)}
-.ph{padding:10px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;
-  justify-content:space-between;font-family:'Rajdhani',sans-serif;font-size:10.5px;
-  font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--text2)}
-.hist-tbl{width:100%;border-collapse:collapse;font-size:11.5px}
-.hist-tbl th{color:var(--text3);font-family:'Rajdhani',sans-serif;font-size:9.5px;letter-spacing:.08em;
-  text-transform:uppercase;padding:7px 6px;border-bottom:1px solid var(--border);text-align:left}
-.hist-tbl td{padding:7px 6px;border-bottom:1px solid rgba(23,32,52,.5);color:var(--text2)}
-.ow{color:var(--sgreen);font-weight:700}.ol{color:var(--red);font-weight:700}
-.no-data{text-align:center;color:var(--text3);font-style:italic;padding:18px;font-size:12.5px}
+/* Bet panel — inside game page, scrollable */
+.bet-panel{padding:14px 14px 20px;display:flex;flex-direction:column;gap:12px}
 
-/* ── CHAT TAB ── */
-.chat-wrap{display:flex;flex-direction:column;height:calc(100vh - var(--hdr) - var(--dock) - 42px)}
-.chat-msgs{flex:1;overflow-y:auto;padding:10px 12px;display:flex;flex-direction:column;gap:6px;-webkit-overflow-scrolling:touch}
-.chat-msgs::-webkit-scrollbar{display:none}
-.chat-msg{display:flex;flex-direction:column;gap:2px;animation:msgIn .2s ease}
-.msg-name{font-size:11px;font-weight:700;color:var(--sgreen);font-family:'Rajdhani',sans-serif;padding-left:2px}
-.msg-text{font-size:13px;color:var(--text);background:rgba(255,255,255,.04);
-  padding:8px 11px;border-radius:0 9px 9px 9px;border-left:2px solid var(--border2);line-height:1.5;word-break:break-word}
-.chat-msg.sys .msg-text{color:var(--text3);font-style:italic;background:transparent;border-left-color:var(--border);font-size:12px}
-.chat-msg.ge .msg-name{color:var(--gold)}
-.chat-msg.ge .msg-text{border-left-color:rgba(245,197,66,.4);background:rgba(245,197,66,.04)}
-.chat-foot{padding:10px 12px;border-top:1px solid var(--border);display:flex;gap:8px;flex-shrink:0;
-  background:var(--panel)}
-.chat-inp{flex:1;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:10px;
-  padding:10px 13px;color:var(--text);font-size:14px;font-family:'Syne',sans-serif;outline:none}
-.chat-inp:focus{border-color:var(--sgreen)}
-.chat-inp::placeholder{color:var(--text3)}
-.btn-send{width:40px;height:40px;flex-shrink:0;background:var(--sgreen);border:none;border-radius:10px;
-  cursor:pointer;color:#050a10;font-size:17px;display:flex;align-items:center;justify-content:center}
+/* Balance card */
+.bal-card{
+  background:var(--panel);border:1px solid var(--border);
+  border-radius:14px;padding:13px 15px;
+  display:flex;align-items:center;justify-content:space-between;
+}
+.bal-left{}
+.bal-lbl2{font-size:9.5px;color:var(--text3);font-family:'Rajdhani',sans-serif;letter-spacing:.12em;text-transform:uppercase;margin-bottom:4px}
+.bal-val{font-family:'Orbitron',monospace;font-size:22px;font-weight:700;color:var(--sgreen)}
+.bal-usd{font-size:10.5px;color:var(--text3);margin-top:2px}
+.bal-ref{
+  background:rgba(255,255,255,.04);border:1px solid var(--border);
+  padding:7px 12px;border-radius:8px;color:var(--text3);
+  font-size:11px;cursor:pointer;font-family:'Rajdhani',sans-serif;font-weight:600;
+}
 
-/* ── BOTTOM DOCK ── */
-.dock{position:fixed;bottom:0;left:0;right:0;height:var(--dock);z-index:100;
-  background:var(--bg);border-top:2px solid var(--border2);
-  box-shadow:0 -10px 40px rgba(0,0,0,.6);overflow-y:auto}
-.dock::-webkit-scrollbar{display:none}
-
-/* Balance strip */
-.dock-bal{display:flex;align-items:center;justify-content:space-between;
-  padding:8px 14px;background:var(--panel2);border-bottom:1px solid var(--border)}
-.bal-left{display:flex;align-items:baseline;gap:6px}
-.bal-val{font-family:'Orbitron',monospace;font-size:18px;font-weight:700;color:var(--sgreen)}
-.bal-usd{font-size:10px;color:var(--text3)}
-.bal-ref{background:none;border:1px solid var(--border);padding:3px 10px;border-radius:6px;
-  color:var(--text3);font-size:11px;cursor:pointer;font-family:'Rajdhani',sans-serif}
-
-/* Bet amount */
-.dock-bet{padding:8px 14px;border-bottom:1px solid var(--border)}
-.dock-lbl{font-size:9.5px;color:var(--text3);font-family:'Rajdhani',sans-serif;letter-spacing:.12em;text-transform:uppercase;margin-bottom:6px}
-.bet-row{display:flex;align-items:center;background:rgba(255,255,255,.05);border:1px solid var(--border);
-  border-radius:10px;overflow:hidden;margin-bottom:7px}
-.bet-inp{flex:1;background:transparent;border:none;outline:none;color:var(--text);
-  font-family:'Orbitron',monospace;font-size:20px;font-weight:700;padding:9px 13px}
+/* Bet amount card */
+.bet-card{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:13px 15px}
+.card-lbl{font-size:9.5px;color:var(--text3);font-family:'Rajdhani',sans-serif;letter-spacing:.12em;text-transform:uppercase;margin-bottom:9px}
+.bet-row{
+  display:flex;align-items:center;
+  background:rgba(255,255,255,.05);border:1px solid var(--border);
+  border-radius:11px;overflow:hidden;margin-bottom:9px;
+}
+.bet-row:focus-within{border-color:var(--sgreen)}
+.bet-inp{
+  flex:1;background:transparent;border:none;outline:none;
+  color:var(--text);font-family:'Orbitron',monospace;
+  font-size:22px;font-weight:700;padding:10px 13px;
+}
 .bet-cur{padding:0 13px;font-family:'Rajdhani',sans-serif;font-size:14px;font-weight:700;color:var(--sgreen)}
-.qbets{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:6px}
-.qb{padding:8px 2px;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:8px;
-  color:var(--text2);font-size:12.5px;font-family:'Rajdhani',sans-serif;font-weight:700;
-  cursor:pointer;text-align:center;-webkit-tap-highlight-color:transparent}
-.qb.active,.qb:active{border-color:var(--sgreen);color:var(--sgreen);background:rgba(20,241,149,.08)}
-.mults{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
-.mb{padding:8px 2px;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:8px;
-  color:var(--text2);font-size:12.5px;font-family:'Rajdhani',sans-serif;font-weight:700;
-  cursor:pointer;text-align:center;-webkit-tap-highlight-color:transparent}
-.mb:active{border-color:var(--blue);color:var(--blue)}
+.qbets{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-bottom:7px}
+.qb{
+  padding:9px 2px;background:rgba(255,255,255,.04);
+  border:1px solid var(--border);border-radius:9px;
+  color:var(--text2);font-size:13px;font-family:'Rajdhani',sans-serif;
+  font-weight:700;cursor:pointer;text-align:center;
+}
+.qb.active{border-color:var(--sgreen);color:var(--sgreen);background:rgba(20,241,149,.08)}
+.mults{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px}
+.mb{
+  padding:9px 2px;background:rgba(255,255,255,.04);
+  border:1px solid var(--border);border-radius:9px;
+  color:var(--text2);font-size:13px;font-family:'Rajdhani',sans-serif;
+  font-weight:700;cursor:pointer;text-align:center;
+}
 
-/* Side + Flip */
-.dock-action{padding:8px 14px 14px;display:grid;grid-template-columns:1fr 1fr 1.6fr;gap:8px;align-items:stretch}
-.side-btn{padding:12px 8px;border-radius:12px;border:2px solid var(--border);
-  background:rgba(255,255,255,.03);cursor:pointer;display:flex;flex-direction:column;
-  align-items:center;justify-content:center;gap:5px;transition:border-color .15s;position:relative}
-.side-btn.ah{border-color:var(--gold);background:rgba(245,197,66,.08);box-shadow:0 0 14px rgba(245,197,66,.2)}
-.side-btn.at{border-color:var(--sgreen);background:rgba(20,241,149,.08);box-shadow:0 0 14px rgba(20,241,149,.16)}
-.side-icon{font-size:24px}
-.side-name{font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text2)}
+/* Side card */
+.side-card{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:13px 15px}
+.side-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.side-btn{
+  padding:16px 10px;border-radius:13px;border:2px solid var(--border);
+  background:rgba(255,255,255,.03);cursor:pointer;
+  display:flex;flex-direction:column;align-items:center;
+  justify-content:center;gap:6px;transition:all .15s;position:relative;
+}
+.side-btn.ah{border-color:var(--gold);background:rgba(245,197,66,.08);box-shadow:0 0 18px rgba(245,197,66,.2)}
+.side-btn.at{border-color:var(--sgreen);background:rgba(20,241,149,.08);box-shadow:0 0 18px rgba(20,241,149,.18)}
+.side-icon{font-size:28px}
+.side-name{font-family:'Rajdhani',sans-serif;font-size:14px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text2)}
 .side-btn.ah .side-name{color:var(--gold)}.side-btn.at .side-name{color:var(--sgreen)}
-.side-chk{position:absolute;top:5px;right:5px;width:14px;height:14px;border-radius:50%;
-  display:none;align-items:center;justify-content:center;font-size:8px}
+.side-chk{position:absolute;top:6px;right:6px;width:15px;height:15px;border-radius:50%;display:none;align-items:center;justify-content:center;font-size:9px;font-weight:700}
 .side-btn.ah .side-chk{display:flex;background:var(--gold);color:#000}
 .side-btn.at .side-chk{display:flex;background:var(--sgreen);color:#000}
 
-/* Flip button column */
-.flip-col{display:flex;flex-direction:column;gap:5px}
-.payout-mini{font-size:10.5px;color:var(--text3);font-family:'Rajdhani',sans-serif;font-weight:600;text-align:center}
-.payout-mini span{color:var(--sgreen);font-family:'Orbitron',monospace;font-size:11px}
-.btn-flip{flex:1;padding:0;
+/* Payout + Flip */
+.flip-card{background:var(--panel);border:1px solid var(--border);border-radius:14px;overflow:hidden}
+.payout-row{padding:10px 15px;display:flex;align-items:center;justify-content:space-between;font-size:12.5px;color:var(--text3);font-family:'Rajdhani',sans-serif;font-weight:600;border-bottom:1px solid var(--border)}
+.pv{color:var(--sgreen);font-weight:700;font-size:14px;font-family:'Orbitron',monospace}
+.btn-flip{
+  width:100%;padding:17px;
   background:linear-gradient(135deg,var(--spurple) 0%,#5b21b6 40%,var(--sgreen) 100%);
   background-size:200% 200%;animation:gs 5s ease infinite;
-  border:none;border-radius:12px;color:#fff;
-  font-family:'Orbitron',monospace;font-size:13px;font-weight:700;letter-spacing:.06em;
-  cursor:pointer;box-shadow:0 4px 20px rgba(153,69,255,.4);
-  position:relative;overflow:hidden;min-height:64px;
-  display:flex;align-items:center;justify-content:center}
-.btn-flip:disabled{opacity:.4;animation:none;background:#1a2540}
-.btn-flip:active{opacity:.85}
+  border:none;color:#fff;
+  font-family:'Orbitron',monospace;font-size:15px;font-weight:700;letter-spacing:.1em;
+  cursor:pointer;box-shadow:0 4px 24px rgba(153,69,255,.4);
+  position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center;gap:8px;
+}
+.btn-flip:disabled{opacity:.4;animation:none;background:#1a2540;box-shadow:none}
+.btn-flip:active:not(:disabled){opacity:.85;transform:scale(.99)}
 
-/* Phantom open button for mobile */
-.btn-phantom-open{width:100%;padding:12px;
-  background:linear-gradient(135deg,#9945ff,#6d28d9);border:none;border-radius:10px;
-  color:#fff;font-family:'Rajdhani',sans-serif;font-size:13.5px;font-weight:700;
-  letter-spacing:.08em;cursor:pointer;box-shadow:0 3px 16px rgba(153,69,255,.45);
-  display:flex;align-items:center;justify-content:center;gap:8px}
+/* ═══════════════════════════
+   PAGE 2 — CHAT
+═══════════════════════════ */
+.chat-page{display:flex;flex-direction:column;height:100%}
+.chat-msgs{
+  flex:1;overflow-y:auto;padding:12px 14px;
+  display:flex;flex-direction:column;gap:8px;
+  -webkit-overflow-scrolling:touch;
+}
+.chat-msgs::-webkit-scrollbar{display:none}
+.chat-msg{display:flex;flex-direction:column;gap:3px;animation:msgIn .2s ease}
+.msg-name{font-size:11.5px;font-weight:700;color:var(--sgreen);font-family:'Rajdhani',sans-serif;padding-left:2px}
+.msg-text{
+  font-size:14px;color:var(--text);background:rgba(255,255,255,.04);
+  padding:9px 12px;border-radius:2px 12px 12px 12px;
+  border-left:2px solid var(--border2);line-height:1.5;word-break:break-word;
+}
+.chat-msg.sys .msg-text{color:var(--text3);font-style:italic;background:transparent;border-left-color:var(--border);font-size:12.5px}
+.chat-msg.ge .msg-name{color:var(--gold)}
+.chat-msg.ge .msg-text{border-left-color:rgba(245,197,66,.4);background:rgba(245,197,66,.05)}
+.chat-foot{
+  padding:10px 14px 10px;border-top:1px solid var(--border);
+  display:flex;gap:9px;flex-shrink:0;
+  background:var(--panel);
+}
+.chat-inp{
+  flex:1;background:rgba(255,255,255,.05);border:1px solid var(--border);
+  border-radius:24px;padding:10px 16px;color:var(--text);
+  font-size:14px;font-family:'Syne',sans-serif;outline:none;
+}
+.chat-inp:focus{border-color:var(--sgreen)}
+.chat-inp::placeholder{color:var(--text3)}
+.btn-send{
+  width:42px;height:42px;flex-shrink:0;
+  background:var(--sgreen);border:none;border-radius:50%;
+  cursor:pointer;color:#050a10;font-size:17px;
+  display:flex;align-items:center;justify-content:center;
+}
+.chat-status{padding:6px 14px;font-size:10px;color:var(--text3);font-family:'Rajdhani',sans-serif;letter-spacing:.08em;text-transform:uppercase;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:5px}
 
-/* Toast */
-.toast{position:fixed;top:60px;left:50%;transform:translateX(-50%) translateY(-120%);
-  padding:10px 20px;border-radius:24px;font-family:'Rajdhani',sans-serif;font-size:13.5px;
-  font-weight:700;z-index:999;transition:transform .3s ease;white-space:nowrap;
-  max-width:90vw;text-align:center;box-shadow:0 8px 30px rgba(0,0,0,.5)}
+/* ═══════════════════════════
+   PAGE 3 — HISTORY
+═══════════════════════════ */
+.hist-page{}
+.hist-ph{padding:12px 15px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--text2);background:var(--panel)}
+.hist-wrap{padding:0 12px 20px}
+.hist-tbl{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:4px}
+.hist-tbl th{color:var(--text3);font-family:'Rajdhani',sans-serif;font-size:10px;letter-spacing:.08em;text-transform:uppercase;padding:8px 6px;border-bottom:1px solid var(--border);text-align:left}
+.hist-tbl td{padding:9px 6px;border-bottom:1px solid rgba(23,32,52,.5);color:var(--text2)}
+.ow{color:var(--sgreen);font-weight:700}.ol{color:var(--red);font-weight:700}
+.no-data{text-align:center;color:var(--text3);font-style:italic;padding:30px;font-size:13px}
+
+/* ── SHARED UTILS ── */
+.toast{
+  position:fixed;top:62px;left:50%;
+  transform:translateX(-50%) translateY(-120%);
+  padding:10px 20px;border-radius:24px;
+  font-family:'Rajdhani',sans-serif;font-size:13.5px;font-weight:700;
+  z-index:999;transition:transform .3s cubic-bezier(.34,1.56,.64,1);
+  white-space:nowrap;max-width:90vw;text-align:center;
+  box-shadow:0 6px 24px rgba(0,0,0,.5);
+}
 .toast.show{transform:translateX(-50%) translateY(0)}
 .toast.s{background:rgba(0,245,160,.15);border:1px solid var(--green);color:var(--green)}
 .toast.e{background:rgba(255,77,109,.15);border:1px solid var(--red);color:var(--red)}
 .toast.i{background:rgba(56,189,248,.15);border:1px solid var(--blue);color:var(--blue)}
 .toast.w{background:rgba(245,197,66,.15);border:1px solid var(--gold);color:var(--gold)}
-.ptcl{position:fixed;pointer-events:none;z-index:500;font-size:22px;animation:floatUp 1.4s ease-out forwards}
-.spin{display:inline-block;width:13px;height:13px;border:2px solid rgba(255,255,255,.3);
-  border-top-color:#fff;border-radius:50%;animation:spinning .7s linear infinite;vertical-align:middle}
+.ptcl{position:fixed;pointer-events:none;z-index:500;font-size:22px;animation:floatUp 1.5s ease-out forwards}
+.spin{display:inline-block;width:13px;height:13px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spinning .7s linear infinite;vertical-align:middle}
+
+/* ── PHANTOM MODAL ── */
+.ph-backdrop{
+  position:fixed;inset:0;background:rgba(0,0,0,.75);
+  backdrop-filter:blur(10px);z-index:1000;
+  display:flex;align-items:flex-end;justify-content:center;
+  animation:fadeIn .2s ease;
+}
+.ph-sheet{
+  background:#0c1422;border:1px solid #1e2e48;
+  border-radius:22px 22px 0 0;padding:8px 22px 36px;
+  width:100%;max-width:520px;
+  animation:slideUp .3s cubic-bezier(.34,1.56,.64,1);
+}
+.ph-handle{width:40px;height:4px;background:var(--border2);border-radius:2px;margin:10px auto 20px}
+.ph-icon{font-size:38px;text-align:center;margin-bottom:10px}
+.ph-title{font-family:'Orbitron',monospace;font-size:17px;font-weight:700;color:var(--text);margin-bottom:10px;text-align:center}
+.ph-body{font-size:13.5px;color:var(--text2);line-height:1.7;margin-bottom:20px;text-align:center}
+.ph-btn{
+  width:100%;padding:14px;border:none;border-radius:12px;cursor:pointer;
+  font-family:'Rajdhani',sans-serif;font-size:14px;font-weight:700;
+  letter-spacing:.06em;margin-bottom:8px;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+}
+.ph-btn-primary{background:linear-gradient(135deg,#9945ff,#14f195);color:#fff;box-shadow:0 4px 18px rgba(153,69,255,.5)}
+.ph-btn-secondary{background:rgba(56,189,248,.08);border:1px solid rgba(56,189,248,.3)!important;color:#38bdf8}
+.ph-btn-close{background:none;border:1px solid var(--border)!important;color:var(--text3);margin-top:4px}
 </style>
 </head>
 <body>
@@ -258,7 +426,7 @@ body::before{content:'';position:fixed;inset:0;
     <div class="logo-icon">
       <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="white" stroke-width="1.8"/><path d="M7.5 14.5h9M7.5 9.5h9M10 12h4" stroke="white" stroke-width="1.8" stroke-linecap="round"/></svg>
     </div>
-    <div class="logo-text"><b>SOL</b><span>FLIP</span></div>
+    <div class="logo-text"><b>SOL</b><s2>FLIP</s2></div>
   </a>
   <div class="hdr-r">
     <span class="net-pill" id="netPill">MAINNET</span>
@@ -269,126 +437,168 @@ body::before{content:'';position:fixed;inset:0;
   </div>
 </div>
 
-<!-- SCROLL AREA (game + chat tabs) -->
-<div class="scroll-area">
-  <!-- Tab bar -->
-  <div class="tab-bar">
-    <button class="tab-btn active" id="tabGame" onclick="switchTab('game')">&#127922; Game</button>
-    <button class="tab-btn" id="tabChat" onclick="switchTab('chat')">&#128172; Chat</button>
-    <button class="tab-btn" id="tabHistory" onclick="switchTab('history')">&#128202; History</button>
+<!-- ═══ PAGE 1: GAME ═══ -->
+<div class="page active" id="pageGame">
+  <!-- Live history strip -->
+  <div class="hist-strip">
+    <span class="live-dot"></span>
+    <span class="live-lbl">LIVE</span>
+    <div id="histDots" style="display:flex;gap:3px;flex-wrap:wrap;flex:1"></div>
+    <div class="hb-stats">
+      <span>H:<span id="hc" style="color:var(--gold);margin-left:2px">0</span></span>
+      <span>T:<span id="tc" style="color:var(--sgreen);margin-left:2px">0</span></span>
+      <span>&#x2211;<span id="totc" style="margin-left:2px">0</span></span>
+    </div>
   </div>
 
-  <!-- GAME TAB -->
-  <div class="tab-pane active" id="paneGame">
-    <div class="hist-bar">
-      <span style="width:7px;height:7px;background:var(--red);border-radius:50%;display:inline-block;box-shadow:0 0 5px var(--red)"></span>
-      <span style="font-size:9.5px;color:var(--red);font-family:'Rajdhani',sans-serif;font-weight:700;letter-spacing:.1em;margin-right:4px">LIVE</span>
-      <div id="histDots" style="display:flex;gap:3px;flex-wrap:wrap;flex:1"></div>
-      <div class="hb-stats">
-        <span>H:<span id="hc" style="color:var(--gold);margin-left:2px">0</span></span>
-        <span>T:<span id="tc" style="color:var(--sgreen);margin-left:2px">0</span></span>
-        <span>&#8721;<span id="totc" style="margin-left:2px">0</span></span>
-      </div>
-    </div>
-    <div class="coin-stage" id="coinStage">
-      <div class="coin-glow" id="coinGlow"></div>
-      <div class="coin-wrapper" id="coinWrapper">
-        <div class="coin" id="coin">
-          <div class="face face-h"><div class="sol-bars"><div class="sol-bar"></div><div class="sol-bar"></div><div class="sol-bar"></div></div><div class="coin-lbl">SOLANA</div></div>
-          <div class="face face-t"><div class="tails-sym">&#9677;</div><div class="tails-lbl">TAILS</div></div>
+  <!-- 3D Coin Stage -->
+  <div class="coin-stage" id="coinStage">
+    <div class="coin-glow" id="coinGlow"></div>
+    <div class="coin-wrapper" id="coinWrapper">
+      <div class="coin" id="coin">
+        <div class="face face-h">
+          <div class="sol-bars"><div class="sol-bar"></div><div class="sol-bar"></div><div class="sol-bar"></div></div>
+          <div class="coin-lbl">SOLANA</div>
+        </div>
+        <div class="face face-t">
+          <div class="tails-sym">&#9677;</div>
+          <div class="tails-lbl">TAILS</div>
         </div>
       </div>
-      <div class="result-ov" id="resultOv"><div class="result-word" id="resultWord"></div><div class="result-sub" id="resultSub"></div></div>
     </div>
-    <div class="m-stats">
-      <div class="m-stat"><div class="m-sv" id="svF">0</div><div class="m-sl">Flips</div></div>
-      <div class="m-stat"><div class="m-sv" id="svW">&#8212;</div><div class="m-sl">Win Rate</div></div>
-      <div class="m-stat"><div class="m-sv" id="svP">&#177;0.00</div><div class="m-sl">P&amp;L</div></div>
+    <div class="result-ov" id="resultOv">
+      <div class="result-word" id="resultWord"></div>
+      <div class="result-sub" id="resultSub"></div>
     </div>
   </div>
 
-  <!-- CHAT TAB -->
-  <div class="tab-pane" id="paneChat">
-    <div class="chat-wrap">
-      <div class="chat-msgs" id="chatMsgs"></div>
-      <div class="chat-foot">
-        <input class="chat-inp" id="chatInp" placeholder="Say something..." maxlength="120" onkeydown="if(event.key==='Enter')sendChat()">
-        <button class="btn-send" onclick="sendChat()">&#10148;</button>
+  <!-- Session stats -->
+  <div class="sess-stats">
+    <div class="ss"><div class="ssv" id="svF">0</div><div class="ssl">Flips</div></div>
+    <div class="ss"><div class="ssv" id="svW">&#8212;</div><div class="ssl">Win Rate</div></div>
+    <div class="ss"><div class="ssv" id="svP">&#177;0.00</div><div class="ssl">P&amp;L SOL</div></div>
+  </div>
+
+  <!-- Scrollable bet panel -->
+  <div class="bet-panel">
+
+    <!-- Balance -->
+    <div class="bal-card">
+      <div class="bal-left">
+        <div class="bal-lbl2">Your Balance</div>
+        <div class="bal-val" id="balVal">0.0000 <span style="font-size:12px;color:var(--text3)">SOL</span></div>
+        <div class="bal-usd" id="balUsd">Connect wallet to start</div>
+      </div>
+      <button class="bal-ref" id="balRefBtn" onclick="fetchBal()">&#8635; Refresh</button>
+    </div>
+
+    <!-- Bet amount -->
+    <div class="bet-card">
+      <div class="card-lbl">Bet Amount</div>
+      <div class="bet-row">
+        <input class="bet-inp" id="betAmt" type="number" value="0.01" min="0.001" step="0.001" inputmode="decimal" oninput="updPayout()">
+        <span class="bet-cur">SOL</span>
+      </div>
+      <div class="qbets">
+        <div class="qb" onclick="setBet(0.01)">0.01</div>
+        <div class="qb" onclick="setBet(0.05)">0.05</div>
+        <div class="qb" onclick="setBet(0.10)">0.10</div>
+        <div class="qb" onclick="setBet(0.25)">0.25</div>
+      </div>
+      <div class="mults">
+        <div class="mb" onclick="halfBet()">&#189;&#215;</div>
+        <div class="mb" onclick="dblBet()">2&#215;</div>
+        <div class="mb" onclick="maxBet()">MAX</div>
       </div>
     </div>
-  </div>
 
-  <!-- HISTORY TAB -->
-  <div class="tab-pane" id="paneHistory">
-    <div class="ph">
-      <span>MY FLIP HISTORY</span>
-      <button onclick="clearMH()" style="background:none;border:1px solid var(--border);color:var(--text3);padding:3px 9px;border-radius:5px;cursor:pointer;font-size:10px;font-family:'Rajdhani',sans-serif">Clear</button>
+    <!-- Choose side -->
+    <div class="side-card">
+      <div class="card-lbl">Choose Side</div>
+      <div class="side-grid">
+        <div class="side-btn ah" id="btnH" onclick="pickSide('heads')">
+          <div class="side-icon">&#127505;</div>
+          <div class="side-name">HEADS</div>
+          <div class="side-chk">&#10003;</div>
+        </div>
+        <div class="side-btn" id="btnT" onclick="pickSide('tails')">
+          <div class="side-icon">&#128994;</div>
+          <div class="side-name">TAILS</div>
+          <div class="side-chk">&#10003;</div>
+        </div>
+      </div>
     </div>
-    <div class="hist-wrap">
-      <table class="hist-tbl">
-        <thead><tr><th>#</th><th>Bet</th><th>Pick&#8594;Result</th><th>Out</th><th>P&amp;L</th></tr></thead>
-        <tbody id="histBody"><tr><td colspan="5" class="no-data">No flips yet</td></tr></tbody>
-      </table>
+
+    <!-- Payout + Flip -->
+    <div class="flip-card">
+      <div class="payout-row">
+        <span>Win Payout (<span id="multD">1.92&#215;</span>)</span>
+        <span class="pv" id="payoutD">0.0192 SOL</span>
+      </div>
+      <button class="btn-flip" id="flipBtn" onclick="doFlip()">&#127922; FLIP COIN</button>
+    </div>
+
+  </div><!-- /bet-panel -->
+</div><!-- /pageGame -->
+
+<!-- ═══ PAGE 2: CHAT ═══ -->
+<div class="page" id="pageChat">
+  <div class="chat-page">
+    <div class="chat-status">
+      <span style="width:6px;height:6px;background:var(--sgreen);border-radius:50%;display:inline-block;animation:pulse 1.5s infinite"></span>
+      <span id="onlineCnt">1</span> online &nbsp;&#183;&nbsp; Live chat
+    </div>
+    <div class="chat-msgs" id="chatMsgs"></div>
+    <div class="chat-foot">
+      <input class="chat-inp" id="chatInp" placeholder="Say something..." maxlength="120" onkeydown="if(event.key==='Enter')sendChat()">
+      <button class="btn-send" onclick="sendChat()">&#10148;</button>
     </div>
   </div>
 </div>
 
-<!-- BOTTOM DOCK -->
-<div class="dock" id="dock">
-  <!-- Balance -->
-  <div class="dock-bal">
-    <div class="bal-left">
-      <div class="bal-val" id="balVal">0.0000 <span style="font-size:11px;color:var(--text3)">SOL</span></div>
-      <div class="bal-usd" id="balUsd">Connect wallet</div>
-    </div>
-    <button class="bal-ref" id="balRefBtn" onclick="fetchBal()">&#8635; Refresh</button>
+<!-- ═══ PAGE 3: HISTORY ═══ -->
+<div class="page" id="pageHistory">
+  <div class="hist-ph">
+    <span>&#128202; My Flip History</span>
+    <button onclick="clearMH()" style="background:none;border:1px solid var(--border);color:var(--text3);padding:4px 10px;border-radius:6px;cursor:pointer;font-size:10px;font-family:'Rajdhani',sans-serif;font-weight:600">Clear</button>
   </div>
-  <!-- Bet -->
-  <div class="dock-bet">
-    <div class="dock-lbl">Bet Amount</div>
-    <div class="bet-row"><input class="bet-inp" id="betAmt" type="number" value="0.01" min="0.001" step="0.001" inputmode="decimal" oninput="updPayout()"><span class="bet-cur">SOL</span></div>
-    <div class="qbets">
-      <div class="qb" onclick="setBet(0.01)">0.01</div>
-      <div class="qb" onclick="setBet(0.05)">0.05</div>
-      <div class="qb" onclick="setBet(0.10)">0.10</div>
-      <div class="qb" onclick="setBet(0.25)">0.25</div>
-    </div>
-    <div class="mults">
-      <div class="mb" onclick="halfBet()">&#189;&#215;</div>
-      <div class="mb" onclick="dblBet()">2&#215;</div>
-      <div class="mb" onclick="maxBet()">MAX</div>
-    </div>
-  </div>
-  <!-- Side + Flip -->
-  <div class="dock-action">
-    <div class="side-btn ah" id="btnH" onclick="pickSide('heads')">
-      <div class="side-icon">&#127505;</div>
-      <div class="side-name">HEADS</div>
-      <div class="side-chk">&#10003;</div>
-    </div>
-    <div class="side-btn" id="btnT" onclick="pickSide('tails')">
-      <div class="side-icon">&#128994;</div>
-      <div class="side-name">TAILS</div>
-      <div class="side-chk">&#10003;</div>
-    </div>
-    <div class="flip-col">
-      <div class="payout-mini">Win: <span id="payoutD">0.0192</span> SOL (<span id="multD">1.92&#215;</span>)</div>
-      <button class="btn-flip" id="flipBtn" onclick="doFlip()">&#127922; FLIP</button>
-    </div>
+  <div class="hist-wrap">
+    <table class="hist-tbl">
+      <thead><tr><th>#</th><th>Bet</th><th>Pick&#8594;Result</th><th>Out</th><th>P&amp;L</th></tr></thead>
+      <tbody id="histBody"><tr><td colspan="5" class="no-data">No flips yet</td></tr></tbody>
+    </table>
   </div>
 </div>
+
+<!-- BOTTOM NAV -->
+<nav class="bottom-nav">
+  <button class="nav-btn active" id="navGame" onclick="showPage('Game')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 3"/></svg>
+    Game
+  </button>
+  <button class="nav-btn" id="navChat" onclick="showPage('Chat')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+    <span class="nav-dot"></span>
+    Chat
+  </button>
+  <button class="nav-btn" id="navHistory" onclick="showPage('History')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 3h18M3 9h18M3 15h18M3 21h18"/></svg>
+    History
+  </button>
+</nav>
 
 <div class="toast" id="toast"></div>
 
-<!-- Phantom Help Modal -->
-<div id="phantomModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);backdrop-filter:blur(10px);z-index:1000;align-items:flex-end;justify-content:center;padding-bottom:0">
-  <div style="background:#0c1422;border:1px solid #1e2e48;border-radius:20px 20px 0 0;padding:28px 22px 36px;width:100%;max-width:500px;text-align:center;animation:slideUp .3s ease">
-    <div style="width:40px;height:4px;background:var(--border2);border-radius:2px;margin:0 auto 20px"></div>
-    <div style="font-size:36px;margin-bottom:10px">&#128302;</div>
-    <div id="pmTitle" style="font-family:'Orbitron',monospace;font-size:17px;font-weight:700;color:#e2eaf8;margin-bottom:10px"></div>
-    <div id="pmBody" style="font-size:13px;color:#6a8fb0;line-height:1.7;margin-bottom:20px"></div>
-    <div id="pmActions" style="display:flex;flex-direction:column;gap:9px"></div>
-    <button onclick="document.getElementById('phantomModal').style.display='none'" style="margin-top:12px;background:none;border:1px solid #172034;color:#334d6e;padding:10px 20px;border-radius:10px;cursor:pointer;font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:600;width:100%">Close</button>
+<!-- Phantom Modal -->
+<div id="phantomModal" style="display:none;position:fixed;inset:0;z-index:1000">
+  <div class="ph-backdrop" onclick="closePhantomModal(event)">
+    <div class="ph-sheet" id="phSheet">
+      <div class="ph-handle"></div>
+      <div class="ph-icon" id="phIcon"></div>
+      <div class="ph-title" id="phTitle"></div>
+      <div class="ph-body" id="phBody"></div>
+      <div id="phActions"></div>
+    </div>
   </div>
 </div>
 
@@ -847,41 +1057,91 @@ function toast(msg, type) {
 
 
 <script>
-// ══ MOBILE OVERRIDES ══
-// These run AFTER the shared scripts, overriding desktop-specific behaviour
+// ═══════════════════════════════════════════════════
+//  MOBILE OVERRIDES — run after shared scripts
+// ═══════════════════════════════════════════════════
 
-// 1. Tab switcher
-function switchTab(name) {
-  document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.remove('active'); });
-  document.querySelectorAll('.tab-pane').forEach(function(p) { p.classList.remove('active'); });
-  var n = name.charAt(0).toUpperCase() + name.slice(1);
-  document.getElementById('tab' + n).classList.add('active');
-  document.getElementById('pane' + n).classList.add('active');
-  // scroll chat to bottom when switching to chat tab
-  if (name === 'chat') {
+// ── 1. PAGE NAVIGATION ──────────────────────────────
+function showPage(name) {
+  // Hide all pages
+  ['Game','Chat','History'].forEach(function(p) {
+    var pg = document.getElementById('page'+p);
+    var nb = document.getElementById('nav'+p);
+    if (pg) pg.classList.remove('active');
+    if (nb) nb.classList.remove('active');
+  });
+  // Show target
+  var target = document.getElementById('page'+name);
+  var navBtn = document.getElementById('nav'+name);
+  if (target) target.classList.add('active');
+  if (navBtn) navBtn.classList.remove('has-notif');
+  if (navBtn) navBtn.classList.add('active');
+  // Scroll chat to bottom when opening chat
+  if (name === 'Chat') {
     var cm = document.getElementById('chatMsgs');
-    if (cm) cm.scrollTop = cm.scrollHeight;
+    if (cm) setTimeout(function() { cm.scrollTop = cm.scrollHeight; }, 50);
   }
 }
 
-// 2. Stats update — uses mobile CSS class m-sv
+// Notify chat tab when new message arrives
+function notifyChatTab() {
+  var nb = document.getElementById('navChat');
+  if (nb && !nb.classList.contains('active')) {
+    nb.classList.add('has-notif');
+  }
+}
+
+// ── 2. STATS — uses mobile CSS classes ──────────────
 updStats = function() {
   document.getElementById('svF').textContent = myTotal;
   document.getElementById('svW').textContent = myTotal ? (wins/myTotal*100).toFixed(0)+'%' : '--';
   var pEl = document.getElementById('svP');
   pEl.textContent = (myPnl >= 0 ? '+' : '') + myPnl.toFixed(3);
-  pEl.className = 'm-sv ' + (myPnl > 0 ? 'g' : myPnl < 0 ? 'r' : '');
+  pEl.className = 'ssv ' + (myPnl > 0 ? 'g' : myPnl < 0 ? 'r' : '');
 };
 
-// 3. Phantom detection — mobile deep link approach
-//    On mobile, window.solana is only available inside Phantom's built-in browser.
-//    We detect that case and also provide the deep link fallback.
+// ── 3. BALANCE UI ────────────────────────────────────
+updBalUI = function() {
+  var el = document.getElementById('balVal');
+  if (el) el.innerHTML = balance.toFixed(4) + ' <span style="font-size:12px;color:var(--text3)">SOL</span>';
+  var usd = document.getElementById('balUsd');
+  if (usd) usd.textContent = '\u2248 $' + (balance * 180).toFixed(2) + ' USD';
+};
+
+// ── 4. SHOW RESULT — switch to game page ────────────
+var _baseShowResult = showResult;
+showResult = function(won, result, pnl, payout, payoutSig) {
+  // Always switch to game page so user sees coin result
+  showPage('Game');
+  // scroll game page to top so coin is visible
+  var pg = document.getElementById('pageGame');
+  if (pg) pg.scrollTop = 0;
+  // Call original
+  _baseShowResult(won, result, pnl, payout, payoutSig);
+};
+
+// ── 5. HISTORY — notify tab on new flip ─────────────
+var _baseAddHistRow = addHistRow;
+addHistRow = function(f) {
+  _baseAddHistRow(f);
+  // notify history tab
+  var nb = document.getElementById('navHistory');
+  if (nb && !nb.classList.contains('active')) nb.classList.add('has-notif');
+};
+
+// ── 6. CHAT — notify tab on new message ─────────────
+var _baseRenderMsg = renderMsg;
+renderMsg = function(m) {
+  _baseRenderMsg(m);
+  notifyChatTab();
+};
+
+// ── 7. PHANTOM CONNECT — mobile deep link ───────────
 connectWallet = async function() {
   if (pubkey) { disconnWallet(); return; }
 
-  // Are we already inside Phantom browser? window.solana will exist
+  // Inside Phantom browser — window.solana exists and is Phantom
   if (window.solana && window.solana.isPhantom) {
-    // Already in Phantom browser — connect normally
     setConnBtn('<span class="spin"></span> Connecting...');
     try {
       var resp = await window.solana.connect();
@@ -894,57 +1154,85 @@ connectWallet = async function() {
     return;
   }
 
-  // Not in Phantom browser — show mobile modal with deep link
-  showPhantomModal('notinstalled');
+  // Not in Phantom browser — show deep link modal
+  openPhantomModal('notinstalled');
 };
 
-// 4. Phantom modal — mobile bottom sheet with deep link
-showPhantomModal = function(type) {
-  var modal = document.getElementById('phantomModal');
-  var title = document.getElementById('pmTitle');
-  var body  = document.getElementById('pmBody');
-  var acts  = document.getElementById('pmActions');
-  modal.style.display = 'flex';
+// ── 8. PHANTOM MODAL — bottom sheet with deep link ──
+function openPhantomModal(type) {
+  var modal  = document.getElementById('phantomModal');
+  var icon   = document.getElementById('phIcon');
+  var title  = document.getElementById('phTitle');
+  var body   = document.getElementById('phBody');
+  var acts   = document.getElementById('phActions');
+  if (!modal) return;
+  modal.style.display = 'block';
 
-  var bs = 'padding:13px;border:none;border-radius:12px;cursor:pointer;font-family:Rajdhani,sans-serif;font-size:14px;font-weight:700;width:100%;margin-bottom:6px;display:block';
-
-  // Build Phantom deep link — opens your site inside Phantom browser
-  var pageUrl = window.location.href;
-  var encodedUrl = encodeURIComponent(pageUrl);
+  var pageUrl     = window.location.href;
+  var encodedUrl  = encodeURIComponent(pageUrl);
   var phantomLink = 'https://phantom.app/ul/browse/' + encodedUrl + '?ref=' + encodedUrl;
 
   if (type === 'local') {
+    icon.textContent  = '\uD83D\uDD0C';
     title.textContent = 'Run Local Server';
-    body.innerHTML = 'Phantom needs HTTP. Run: <code style="color:#14f195;display:block;margin-top:8px;padding:8px;background:#060a12;border-radius:6px">node server.js</code> Then open <code style="color:#38bdf8">http://localhost:8080</code>';
-    acts.innerHTML = '<button style="' + bs + ';background:linear-gradient(135deg,#9945ff,#14f195);color:#fff" onclick="navigator.clipboard&&navigator.clipboard.writeText('node server.js');this.textContent='Copied!';setTimeout(function(){this.textContent='Copy Command'},2000)">Copy Command</button>';
+    body.innerHTML    = 'Phantom needs HTTP. Run <code style="color:#14f195;background:#060a12;padding:3px 7px;border-radius:5px">node server.js</code> then open <strong style="color:#38bdf8">http://localhost:8080</strong>';
+    acts.innerHTML    = '';
   } else {
+    icon.textContent  = '\uD83D\uDC7C';
     title.textContent = 'Open in Phantom';
-    body.innerHTML = 'To play on mobile, open this page inside the <strong style="color:#e2eaf8">Phantom wallet browser.</strong><br><br>Tap the button below — it will open this game directly inside Phantom where your wallet connects automatically.';
-    acts.innerHTML =
-      '<button style="' + bs + ';background:linear-gradient(135deg,#9945ff,#14f195);color:#fff;box-shadow:0 4px 18px rgba(153,69,255,.5)" onclick="window.location.href='' + phantomLink + ''">' +
-        '&#128302; Open in Phantom App' +
+    body.innerHTML    = 'To play on mobile, open this page inside the <strong style="color:#e2eaf8">Phantom wallet browser.</strong><br><br>Tap the button below \u2014 it opens this game directly inside Phantom where your wallet connects automatically.';
+    acts.innerHTML    =
+      '<button class="ph-btn ph-btn-primary" onclick="window.location.href=\'' + phantomLink + '\'">' +
+        '\uD83D\uDC7C Open in Phantom App' +
       '</button>' +
-      '<button style="' + bs + ';background:rgba(56,189,248,.08);border:1px solid rgba(56,189,248,.3);color:#38bdf8" onclick="if(navigator.clipboard){navigator.clipboard.writeText('' + pageUrl + '');this.textContent='Link Copied!';setTimeout(function(){document.getElementById('b2').textContent='Copy Link to Paste in Phantom'},2000)}else{this.textContent='Copy manually from address bar'}" id="b2">' +
-        '&#128203; Copy Link to Paste in Phantom' +
+      '<button class="ph-btn ph-btn-secondary" id="copyLinkBtn" onclick="copyPageLink(this)">' +
+        '\uD83D\uDCCB Copy Link to Paste in Phantom' +
+      '</button>' +
+      '<button class="ph-btn ph-btn-close" onclick="closePhantomModal()">' +
+        'Close' +
       '</button>';
   }
-};
+}
 
-// 5. 3D coin tilt — touch version for mobile
+function copyPageLink(btn) {
+  var url = window.location.href;
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(url).then(function() {
+      btn.textContent = '\u2713 Link Copied!';
+      setTimeout(function() { btn.textContent = '\uD83D\uDCCB Copy Link to Paste in Phantom'; }, 2500);
+    });
+  } else {
+    // iOS fallback
+    var ta = document.createElement('textarea');
+    ta.value = url; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.focus(); ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    btn.textContent = '\u2713 Copied!';
+  }
+}
+
+function closePhantomModal(e) {
+  if (e && e.target !== document.querySelector('.ph-backdrop')) return;
+  document.getElementById('phantomModal').style.display = 'none';
+}
+
+// Override desktop showPhantomModal to use mobile version
+showPhantomModal = openPhantomModal;
+
+// ── 9. 3D COIN TILT via touch ───────────────────────
 (function() {
-  var stage = document.getElementById('coinStage');
+  var stage   = document.getElementById('coinStage');
   var wrapper = document.getElementById('coinWrapper');
   if (!stage || !wrapper) return;
 
-  // Remove any existing desktop mousemove (won't fire on mobile anyway)
-  // Add touch-based tilt
   stage.addEventListener('touchmove', function(e) {
     if (flipping) return;
     e.preventDefault();
-    var touch = e.touches[0];
+    var t = e.touches[0];
     var r = stage.getBoundingClientRect();
-    var tx = -((touch.clientY - r.top  - r.height/2) / (r.height/2)) * 14;
-    var ty =  ((touch.clientX - r.left - r.width/2)  / (r.width/2))  * 14;
+    var tx = -((t.clientY - r.top  - r.height/2) / (r.height/2)) * 15;
+    var ty =  ((t.clientX - r.left - r.width/2)  / (r.width/2))  * 15;
     wrapper.style.transform = 'rotateX(' + tx + 'deg) rotateY(' + ty + 'deg)';
   }, { passive: false });
 
@@ -955,43 +1243,7 @@ showPhantomModal = function(type) {
   });
 })();
 
-// 6. Balance UI — mobile layout (bal-val already in dock)
-updBalUI = function() {
-  var el = document.getElementById('balVal');
-  if (el) el.innerHTML = balance.toFixed(4) + ' <span style="font-size:11px;color:var(--text3)">SOL</span>';
-  var usd = document.getElementById('balUsd');
-  if (usd) usd.textContent = '$' + (balance * 180).toFixed(2);
-};
-
-// 7. addHistRow — switches to history tab on first flip so user sees result
-var _origAddHistRow = addHistRow;
-addHistRow = function(f) {
-  _origAddHistRow(f);
-};
-
-// 8. showResult override — also switch to game tab so coin result is visible
-var _origShowResult = showResult;
-showResult = function(won, result, pnl, payout, payoutSig) {
-  _origShowResult(won, result, pnl, payout, payoutSig);
-  switchTab('game'); // always show coin result
-};
-
-// 9. Chat render — mobile chat tab syncs same as desktop
-// renderMsg already works — just make sure scroll works
-var _origRenderMsg = renderMsg;
-renderMsg = function(m) {
-  _origRenderMsg(m);
-};
-
-// 10. Prevent dock from scrolling page on iOS
-var dock = document.getElementById('dock');
-if (dock) {
-  dock.addEventListener('touchmove', function(e) {
-    e.stopPropagation();
-  }, { passive: true });
-}
-
-// 11. Auto-reconnect inside Phantom browser on load
+// ── 10. AUTO-RECONNECT inside Phantom browser ────────
 (function() {
   if (window.solana && window.solana.isPhantom) {
     window.solana.connect({ onlyIfTrusted: true })
@@ -1003,6 +1255,17 @@ if (dock) {
     window.solana.on('disconnect', disconnWallet);
   }
 })();
+
+// ── 11. Fix onConn for mobile — show correct network ─
+var _baseOnConn = onConn;
+onConn = function() {
+  _baseOnConn();
+  // ensure netPill updated
+  var np = document.getElementById('netPill');
+  if (np && srvSettings && srvSettings.network) {
+    np.textContent = srvSettings.network.toUpperCase();
+  }
+};
 </script>
 </body>
 </html>
