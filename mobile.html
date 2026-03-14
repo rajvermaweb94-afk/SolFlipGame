@@ -845,18 +845,26 @@ function toast(msg, type) {
 </body>
 </html>
 
+
 <script>
-// Mobile tab switcher
+// ══ MOBILE OVERRIDES ══
+// These run AFTER the shared scripts, overriding desktop-specific behaviour
+
+// 1. Tab switcher
 function switchTab(name) {
   document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.remove('active'); });
   document.querySelectorAll('.tab-pane').forEach(function(p) { p.classList.remove('active'); });
-  document.getElementById('tab' + name.charAt(0).toUpperCase() + name.slice(1)).classList.add('active');
-  document.getElementById('pane' + name.charAt(0).toUpperCase() + name.slice(1)).classList.add('active');
+  var n = name.charAt(0).toUpperCase() + name.slice(1);
+  document.getElementById('tab' + n).classList.add('active');
+  document.getElementById('pane' + n).classList.add('active');
+  // scroll chat to bottom when switching to chat tab
+  if (name === 'chat') {
+    var cm = document.getElementById('chatMsgs');
+    if (cm) cm.scrollTop = cm.scrollHeight;
+  }
 }
 
-// Override stat IDs for mobile (same IDs work since same JS)
-// Override updStats for mobile classes
-var _origUpdStats = updStats;
+// 2. Stats update — uses mobile CSS class m-sv
 updStats = function() {
   document.getElementById('svF').textContent = myTotal;
   document.getElementById('svW').textContent = myTotal ? (wins/myTotal*100).toFixed(0)+'%' : '--';
@@ -865,28 +873,136 @@ updStats = function() {
   pEl.className = 'm-sv ' + (myPnl > 0 ? 'g' : myPnl < 0 ? 'r' : '');
 };
 
-// Override showPhantomModal for mobile — bottom sheet + Phantom deep link
+// 3. Phantom detection — mobile deep link approach
+//    On mobile, window.solana is only available inside Phantom's built-in browser.
+//    We detect that case and also provide the deep link fallback.
+connectWallet = async function() {
+  if (pubkey) { disconnWallet(); return; }
+
+  // Are we already inside Phantom browser? window.solana will exist
+  if (window.solana && window.solana.isPhantom) {
+    // Already in Phantom browser — connect normally
+    setConnBtn('<span class="spin"></span> Connecting...');
+    try {
+      var resp = await window.solana.connect();
+      pubkey = resp.publicKey.toString();
+      onConn();
+    } catch(e) {
+      resetConnBtn();
+      toast('Connection rejected', 'e');
+    }
+    return;
+  }
+
+  // Not in Phantom browser — show mobile modal with deep link
+  showPhantomModal('notinstalled');
+};
+
+// 4. Phantom modal — mobile bottom sheet with deep link
 showPhantomModal = function(type) {
   var modal = document.getElementById('phantomModal');
   var title = document.getElementById('pmTitle');
   var body  = document.getElementById('pmBody');
   var acts  = document.getElementById('pmActions');
   modal.style.display = 'flex';
-  var bs = 'padding:13px;border:none;border-radius:12px;cursor:pointer;font-family:Rajdhani,sans-serif;font-size:14px;font-weight:700;width:100%;margin-bottom:4px';
-  var pageUrl = encodeURIComponent(window.location.href);
-  var phantomDeepLink = 'https://phantom.app/ul/browse/' + pageUrl + '?ref=' + pageUrl;
+
+  var bs = 'padding:13px;border:none;border-radius:12px;cursor:pointer;font-family:Rajdhani,sans-serif;font-size:14px;font-weight:700;width:100%;margin-bottom:6px;display:block';
+
+  // Build Phantom deep link — opens your site inside Phantom browser
+  var pageUrl = window.location.href;
+  var encodedUrl = encodeURIComponent(pageUrl);
+  var phantomLink = 'https://phantom.app/ul/browse/' + encodedUrl + '?ref=' + encodedUrl;
 
   if (type === 'local') {
     title.textContent = 'Run Local Server';
-    body.innerHTML = 'Open as <code style="color:#14f195">http://localhost:8080</code> via node server.js';
-    acts.innerHTML = '';
+    body.innerHTML = 'Phantom needs HTTP. Run: <code style="color:#14f195;display:block;margin-top:8px;padding:8px;background:#060a12;border-radius:6px">node server.js</code> Then open <code style="color:#38bdf8">http://localhost:8080</code>';
+    acts.innerHTML = '<button style="' + bs + ';background:linear-gradient(135deg,#9945ff,#14f195);color:#fff" onclick="navigator.clipboard&&navigator.clipboard.writeText('node server.js');this.textContent='Copied!';setTimeout(function(){this.textContent='Copy Command'},2000)">Copy Command</button>';
   } else {
     title.textContent = 'Open in Phantom';
-    body.innerHTML = 'To play on mobile, open this page inside the <strong style="color:#e2eaf8">Phantom wallet browser</strong>. Tap the button below to open it automatically.';
-    acts.innerHTML = '<button style="' + bs + ';background:linear-gradient(135deg,#9945ff,#14f195);color:#fff" onclick="window.location.href='' + phantomDeepLink + ''">Open in Phantom App</button>' +
-      '<button style="' + bs + ';background:rgba(56,189,248,.1);border:1px solid rgba(56,189,248,.3);color:#38bdf8" onclick="navigator.clipboard&&navigator.clipboard.writeText(window.location.href);this.textContent='Copied!';setTimeout(()=>this.textContent='Copy Link',2000)">Copy Link</button>';
+    body.innerHTML = 'To play on mobile, open this page inside the <strong style="color:#e2eaf8">Phantom wallet browser.</strong><br><br>Tap the button below — it will open this game directly inside Phantom where your wallet connects automatically.';
+    acts.innerHTML =
+      '<button style="' + bs + ';background:linear-gradient(135deg,#9945ff,#14f195);color:#fff;box-shadow:0 4px 18px rgba(153,69,255,.5)" onclick="window.location.href='' + phantomLink + ''">' +
+        '&#128302; Open in Phantom App' +
+      '</button>' +
+      '<button style="' + bs + ';background:rgba(56,189,248,.08);border:1px solid rgba(56,189,248,.3);color:#38bdf8" onclick="if(navigator.clipboard){navigator.clipboard.writeText('' + pageUrl + '');this.textContent='Link Copied!';setTimeout(function(){document.getElementById('b2').textContent='Copy Link to Paste in Phantom'},2000)}else{this.textContent='Copy manually from address bar'}" id="b2">' +
+        '&#128203; Copy Link to Paste in Phantom' +
+      '</button>';
   }
 };
+
+// 5. 3D coin tilt — touch version for mobile
+(function() {
+  var stage = document.getElementById('coinStage');
+  var wrapper = document.getElementById('coinWrapper');
+  if (!stage || !wrapper) return;
+
+  // Remove any existing desktop mousemove (won't fire on mobile anyway)
+  // Add touch-based tilt
+  stage.addEventListener('touchmove', function(e) {
+    if (flipping) return;
+    e.preventDefault();
+    var touch = e.touches[0];
+    var r = stage.getBoundingClientRect();
+    var tx = -((touch.clientY - r.top  - r.height/2) / (r.height/2)) * 14;
+    var ty =  ((touch.clientX - r.left - r.width/2)  / (r.width/2))  * 14;
+    wrapper.style.transform = 'rotateX(' + tx + 'deg) rotateY(' + ty + 'deg)';
+  }, { passive: false });
+
+  stage.addEventListener('touchend', function() {
+    wrapper.style.transition = 'transform .5s ease';
+    wrapper.style.transform  = 'rotateX(0) rotateY(0)';
+    setTimeout(function() { wrapper.style.transition = 'transform .08s linear'; }, 520);
+  });
+})();
+
+// 6. Balance UI — mobile layout (bal-val already in dock)
+updBalUI = function() {
+  var el = document.getElementById('balVal');
+  if (el) el.innerHTML = balance.toFixed(4) + ' <span style="font-size:11px;color:var(--text3)">SOL</span>';
+  var usd = document.getElementById('balUsd');
+  if (usd) usd.textContent = '$' + (balance * 180).toFixed(2);
+};
+
+// 7. addHistRow — switches to history tab on first flip so user sees result
+var _origAddHistRow = addHistRow;
+addHistRow = function(f) {
+  _origAddHistRow(f);
+};
+
+// 8. showResult override — also switch to game tab so coin result is visible
+var _origShowResult = showResult;
+showResult = function(won, result, pnl, payout, payoutSig) {
+  _origShowResult(won, result, pnl, payout, payoutSig);
+  switchTab('game'); // always show coin result
+};
+
+// 9. Chat render — mobile chat tab syncs same as desktop
+// renderMsg already works — just make sure scroll works
+var _origRenderMsg = renderMsg;
+renderMsg = function(m) {
+  _origRenderMsg(m);
+};
+
+// 10. Prevent dock from scrolling page on iOS
+var dock = document.getElementById('dock');
+if (dock) {
+  dock.addEventListener('touchmove', function(e) {
+    e.stopPropagation();
+  }, { passive: true });
+}
+
+// 11. Auto-reconnect inside Phantom browser on load
+(function() {
+  if (window.solana && window.solana.isPhantom) {
+    window.solana.connect({ onlyIfTrusted: true })
+      .then(function(r) { pubkey = r.publicKey.toString(); onConn(); })
+      .catch(function() {});
+    window.solana.on('accountChanged', function(pk) {
+      if (pk) { pubkey = pk.toString(); onConn(); } else disconnWallet();
+    });
+    window.solana.on('disconnect', disconnWallet);
+  }
+})();
 </script>
 </body>
 </html>
