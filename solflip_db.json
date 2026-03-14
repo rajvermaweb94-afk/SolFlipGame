@@ -1,0 +1,44 @@
+{
+  "settings": {
+    "flipMode": "random",
+    "houseEdge": 4,
+    "weightedRate": 50,
+    "flipPattern": "H,T,H,H,T",
+    "patternIndex": 0,
+    "minBet": 0.001,
+    "maxBet": 0.5,
+    "maxPayout": 5,
+    "flipCooldown": 5,
+    "network": "mainnet",
+    "rpcUrl": "",
+    "chatEnabled": true,
+    "msgCooldown": 3,
+    "maxMsgLen": 120,
+    "adminPass": "admin123",
+    "adminUser": "admin",
+    "autoSwitchBelow": 1,
+    "alertBelow": 2,
+    "treasuryPrivKey": "",
+    "treasuryAddress": ""
+  },
+  "flips": [],
+  "players": {},
+  "chat": [
+    {
+      "id": 1773398437389,
+      "name": "Game",
+      "text": "51BqQW... joined the game",
+      "ts": "2026-03-13T10:40:37.389Z",
+      "system": false,
+      "gameEvent": true
+    },
+    {
+      "id": 1773398460763,
+      "name": "Game",
+      "text": "51BqQW... joined the game",
+      "ts": "2026-03-13T10:41:00.763Z",
+      "system": false,
+      "gameEvent": true
+    }
+  ]
+}
