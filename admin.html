@@ -1,0 +1,929 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SolFlip Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Orbitron:wght@400;600;700;900&family=Syne:wght@400;500;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#05080f;--bg2:#08101a;--panel:#0b1220;--border:#152030;--border2:#1b2e48;
+  --green:#00f5a0;--green2:#00c47d;--gold:#f5c542;--red:#ff4d6d;--orange:#ff8c42;
+  --blue:#38bdf8;--sgreen:#14f195;--spurple:#9945ff;--text:#dde8f8;--text2:#6a8fb0;--text3:#2e4a68}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;min-height:100vh;display:flex;flex-direction:column}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(1.3)}}
+@keyframes spinning{to{transform:rotate(360deg)}}
+
+/* LOGIN */
+.login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;
+  background:radial-gradient(ellipse at 50% 40%,rgba(153,69,255,.07) 0%,transparent 65%)}
+.login-box{background:var(--panel);border:1px solid var(--border);border-radius:18px;padding:44px 38px;
+  width:360px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.6)}
+.l-logo{font-family:'Orbitron',monospace;font-size:22px;font-weight:900;letter-spacing:.04em;margin-bottom:4px}
+.l-logo span{color:var(--sgreen)}
+.l-sub{font-family:'Rajdhani',sans-serif;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--text3);margin-bottom:30px}
+.l-inp{width:100%;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:9px;
+  padding:11px 14px;color:var(--text);font-size:13.5px;font-family:'Syne',sans-serif;outline:none;margin-bottom:10px;transition:border-color .2s}
+.l-inp:focus{border-color:var(--sgreen)}
+.l-btn{width:100%;padding:12px;background:linear-gradient(135deg,var(--spurple),var(--sgreen));border:none;
+  border-radius:9px;color:#fff;font-family:'Orbitron',monospace;font-size:12.5px;font-weight:700;
+  letter-spacing:.1em;cursor:pointer;transition:all .2s;box-shadow:0 4px 20px rgba(153,69,255,.4);margin-top:4px}
+.l-btn:hover{transform:translateY(-1px);box-shadow:0 8px 28px rgba(153,69,255,.5)}
+.l-err{color:var(--red);font-size:12px;margin-top:8px;display:none}
+.l-hint{font-size:11px;color:var(--text3);margin-top:14px}
+
+/* ADMIN SHELL */
+.admin{display:none;flex-direction:column;min-height:100vh}
+
+/* TOPBAR */
+.topbar{background:rgba(5,8,15,.95);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);
+  padding:0 18px;height:56px;display:flex;align-items:center;justify-content:space-between;
+  position:sticky;top:0;z-index:100}
+.a-logo{font-family:'Orbitron',monospace;font-size:16px;font-weight:700;letter-spacing:.04em;display:flex;align-items:center;gap:10px}
+.a-logo span{color:var(--sgreen)}.a-logo em{color:var(--text3);font-style:normal;font-size:10px;font-family:'Rajdhani',sans-serif;letter-spacing:.14em}
+.t-nav{display:flex;gap:3px}
+.nb{padding:7px 13px;border-radius:8px;border:none;background:transparent;color:var(--text2);
+  font-family:'Rajdhani',sans-serif;font-size:12.5px;font-weight:600;letter-spacing:.08em;cursor:pointer;transition:all .15s}
+.nb:hover{color:var(--text);background:rgba(255,255,255,.05)}
+.nb.active{color:var(--sgreen);background:rgba(20,241,149,.08)}
+.nb.live-nb{color:var(--red)}
+.btn-lo{padding:7px 14px;background:rgba(255,77,109,.1);border:1px solid rgba(255,77,109,.3);
+  border-radius:8px;color:var(--red);font-family:'Rajdhani',sans-serif;font-size:12.5px;font-weight:600;cursor:pointer;transition:all .15s}
+.btn-lo:hover{background:rgba(255,77,109,.2)}
+
+/* CONTENT */
+.content{flex:1;display:flex}
+.tab{display:none;padding:18px;width:100%}
+.tab.active{display:block}
+
+/* CARDS */
+.card{background:var(--panel);border:1px solid var(--border);border-radius:13px;overflow:hidden}
+.ch{padding:13px 17px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;
+  justify-content:space-between;font-family:'Rajdhani',sans-serif;font-size:11.5px;font-weight:700;
+  letter-spacing:.14em;text-transform:uppercase;color:var(--text2)}
+.cb{padding:17px}
+
+/* GRID LAYOUTS */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:15px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:15px}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:13px;margin-bottom:18px}
+.mb{margin-bottom:15px}
+
+/* KPI */
+.kpi{background:var(--panel);border:1px solid var(--border);border-radius:13px;padding:17px 18px}
+.kl{font-size:10px;color:var(--text3);font-family:'Rajdhani',sans-serif;letter-spacing:.14em;text-transform:uppercase;margin-bottom:7px}
+.kv{font-family:'Orbitron',monospace;font-size:24px;font-weight:700}
+.kv.g{color:var(--sgreen)}.kv.gl{color:var(--gold)}.kv.b{color:var(--blue)}
+.ks{font-size:11px;color:var(--text3);margin-top:3px}
+
+/* FORM */
+label{font-size:10.5px;color:var(--text3);font-family:'Rajdhani',sans-serif;letter-spacing:.1em;text-transform:uppercase;display:block;margin-bottom:5px;margin-top:13px}
+label:first-child{margin-top:0}
+input[type=text],input[type=password],input[type=number],select,textarea{
+  width:100%;background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:7px;
+  padding:8px 11px;color:var(--text);font-size:13px;font-family:'Syne',sans-serif;outline:none;transition:border-color .2s}
+input:focus,select:focus{border-color:var(--sgreen)}
+select{appearance:none;cursor:pointer}
+select option{background:#0b1220}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+
+/* BUTTONS */
+.btn{padding:8px 16px;border-radius:7px;border:none;font-family:'Rajdhani',sans-serif;font-size:12.5px;
+  font-weight:700;letter-spacing:.07em;cursor:pointer;transition:all .15s;display:inline-flex;align-items:center;gap:5px}
+.btn-p{background:var(--sgreen);color:#040b12}.btn-p:hover{background:var(--green2);transform:translateY(-1px)}
+.btn-s{background:rgba(255,255,255,.05);border:1px solid var(--border2);color:var(--text2)}.btn-s:hover{background:rgba(255,255,255,.09);color:var(--text)}
+.btn-d{background:rgba(255,77,109,.1);border:1px solid rgba(255,77,109,.4);color:var(--red)}.btn-d:hover{background:rgba(255,77,109,.2)}
+.btn-g{background:var(--gold);color:#0a0800}.btn-g:hover{background:#e0b018}
+.btn-sm{padding:5px 11px;font-size:11.5px}
+.mt{margin-top:13px}
+.fw{width:100%;justify-content:center}
+
+/* SLIDER */
+.sl-wrap{padding-top:3px}
+.sl-val{float:right;font-family:'Orbitron',monospace;font-size:13px;font-weight:700;color:var(--sgreen);margin-bottom:5px}
+input[type=range]{width:100%;height:4px;background:var(--border);border-radius:2px;outline:none;border:none;padding:0;cursor:pointer;accent-color:var(--sgreen)}
+.sl-info{font-size:12px;color:var(--text3);margin-top:5px}
+
+/* FLIP MODES */
+.modes{display:flex;flex-direction:column;gap:8px}
+.mode{border:1px solid var(--border);border-radius:9px;padding:11px 13px;cursor:pointer;transition:all .15s;display:flex;align-items:flex-start;gap:11px}
+.mode:hover{border-color:var(--border2);background:rgba(255,255,255,.02)}
+.mode.sel{border-color:var(--sgreen);background:rgba(20,241,149,.05)}
+.mode-rd{width:15px;height:15px;border-radius:50%;border:2px solid var(--border2);flex-shrink:0;margin-top:3px;transition:all .15s}
+.mode.sel .mode-rd{border-color:var(--sgreen);background:var(--sgreen)}
+.mode-body{flex:1}
+.mn{font-family:'Rajdhani',sans-serif;font-size:13.5px;font-weight:700;color:var(--text)}
+.md{font-size:11px;color:var(--text3);margin-top:2px}
+.mode-x{margin-top:8px;display:none;align-items:center;gap:8px;flex-wrap:wrap}
+.mode.sel .mode-x{display:flex}
+.rl{display:flex;align-items:center;gap:5px;cursor:pointer}
+.rl input{accent-color:var(--sgreen);width:14px;height:14px}
+.rl span{font-size:12px;color:var(--text2);font-family:'Rajdhani',sans-serif}
+
+/* CHECKBOX */
+.chk{display:flex;align-items:center;gap:8px;cursor:pointer;margin-top:0!important}
+.chk input{width:15px;height:15px;accent-color:var(--sgreen);cursor:pointer}
+.chk span{font-size:13px;color:var(--text2)}
+
+/* TABLES */
+.tbl{width:100%;border-collapse:collapse;font-size:12.5px}
+.tbl th{color:var(--text3);font-family:'Rajdhani',sans-serif;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;padding:9px 13px;border-bottom:1px solid var(--border);text-align:left;cursor:pointer}
+.tbl th:hover{color:var(--text2)}
+.tbl td{padding:10px 13px;border-bottom:1px solid rgba(21,32,48,.6);color:var(--text2);vertical-align:middle}
+.badge{display:inline-flex;align-items:center;gap:4px;padding:2px 9px;border-radius:20px;font-size:10.5px;font-family:'Rajdhani',sans-serif;font-weight:700;letter-spacing:.04em}
+.badge-a{background:rgba(20,241,149,.1);color:var(--sgreen);border:1px solid rgba(20,241,149,.3)}
+.badge-b{background:rgba(255,77,109,.1);color:var(--red);border:1px solid rgba(255,77,109,.3)}
+.badge-d{width:6px;height:6px;border-radius:50%;background:currentColor}
+.mono{font-family:monospace;font-size:11.5px;color:var(--text3)}
+.empty{text-align:center;padding:36px;color:var(--text3);font-style:italic;font-size:13px}
+.ow{color:var(--sgreen);font-weight:600}.ol{color:var(--red);font-weight:600}
+
+/* TREASURY */
+.t-hdr{padding:18px;border-bottom:1px solid var(--border)}
+.t-addr{font-family:monospace;font-size:12.5px;color:var(--text3);margin-bottom:5px;word-break:break-all}
+.t-bal{font-family:'Orbitron',monospace;font-size:28px;font-weight:700;color:var(--sgreen);margin-bottom:9px}
+.t-acts{display:flex;gap:7px;flex-wrap:wrap}
+
+/* LIVE */
+.stream-item{display:flex;align-items:center;gap:11px;padding:9px 13px;border-bottom:1px solid rgba(21,32,48,.5);font-size:12px}
+.s-dot{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10.5px;font-weight:700;font-family:'Rajdhani',sans-serif;flex-shrink:0}
+.s-H{background:rgba(245,197,66,.18);color:var(--gold);border:1px solid rgba(245,197,66,.35)}
+.s-T{background:rgba(20,241,149,.12);color:var(--sgreen);border:1px solid rgba(20,241,149,.3)}
+
+/* DANGER */
+.danger{background:rgba(255,77,109,.05);border:1px solid rgba(255,77,109,.18);border-radius:13px;padding:17px}
+.d-title{font-family:'Rajdhani',sans-serif;font-size:13.5px;font-weight:700;color:var(--orange);letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px}
+.d-desc{font-size:12px;color:var(--text3);margin-bottom:13px}
+.d-btns{display:flex;gap:9px;flex-wrap:wrap}
+
+/* SEARCH ROW */
+.s-row{display:flex;gap:9px;margin-bottom:13px;align-items:center}
+.s-inp{flex:1;background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:7px;padding:8px 13px;color:var(--text);font-size:12.5px;outline:none}
+.s-inp:focus{border-color:var(--sgreen)}
+.pag{display:flex;align-items:center;gap:9px;margin-top:13px}
+.pag-b{padding:5px 13px;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:6px;color:var(--text2);font-family:'Rajdhani',sans-serif;cursor:pointer;font-size:12.5px}
+.pag-b:hover{border-color:var(--border2);color:var(--text)}
+
+/* TOAST */
+.toast{position:fixed;bottom:18px;right:18px;padding:10px 18px;border-radius:9px;
+  font-family:'Rajdhani',sans-serif;font-size:13.5px;font-weight:700;z-index:999;
+  transform:translateX(120%);transition:transform .3s;box-shadow:0 8px 30px rgba(0,0,0,.5)}
+.toast.show{transform:translateX(0)}
+.toast.s{background:rgba(0,245,160,.12);border:1px solid var(--green);color:var(--green)}
+.toast.e{background:rgba(255,77,109,.12);border:1px solid var(--red);color:var(--red)}
+.toast.i{background:rgba(56,189,248,.12);border:1px solid var(--blue);color:var(--blue)}
+.toast.w{background:rgba(245,197,66,.12);border:1px solid var(--gold);color:var(--gold)}
+.spin{display:inline-block;width:13px;height:13px;border:2px solid rgba(255,255,255,.3);
+  border-top-color:#fff;border-radius:50%;animation:spinning .7s linear infinite;vertical-align:middle}
+@media(max-width:1000px){.g4{grid-template-columns:1fr 1fr}.g2,.g3{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="login-wrap" id="loginWrap">
+  <div class="login-box">
+    <div class="l-logo">SOL<span>FLIP</span></div>
+    <div class="l-sub">Admin Panel</div>
+    <input class="l-inp" type="text" id="lu" placeholder="Username" onkeydown="if(event.key==='Enter')doLogin()">
+    <input class="l-inp" type="password" id="lp" placeholder="Password" onkeydown="if(event.key==='Enter')doLogin()">
+    <button class="l-btn" onclick="doLogin()">ENTER ADMIN</button>
+    <div class="l-err" id="lErr">Invalid credentials</div>
+    <div class="l-hint">Default: admin / admin123</div>
+  </div>
+</div>
+
+<!-- ADMIN UI -->
+<div class="admin" id="adminUI">
+  <div class="topbar">
+    <div class="a-logo">
+      <span style="width:30px;height:30px;border-radius:7px;background:linear-gradient(135deg,#9945ff,#14f195);display:flex;align-items:center;justify-content:center;font-size:14px">◎</span>
+      SOL<span>FLIP</span> <em>ADMIN</em>
+    </div>
+    <div class="t-nav">
+      <button class="nb active" onclick="showTab('dashboard',this)">Dashboard</button>
+      <button class="nb" onclick="showTab('flipCtrl',this)">Flip Control</button>
+      <button class="nb" onclick="showTab('players',this)">Players</button>
+      <button class="nb" onclick="showTab('treasury',this)">Treasury</button>
+      <button class="nb" onclick="showTab('settings',this)">Settings</button>
+      <button class="nb live-nb" onclick="showTab('live',this)">● Live</button>
+    </div>
+    <button class="btn-lo" onclick="doLogout()">Logout</button>
+  </div>
+
+  <div class="content">
+
+    <!-- DASHBOARD -->
+    <div class="tab active" id="tab-dashboard">
+      <div class="g4">
+        <div class="kpi"><div class="kl">Total Flips</div><div class="kv b" id="kFlips">0</div><div class="ks">All time</div></div>
+        <div class="kpi"><div class="kl">Total Volume</div><div class="kv gl" id="kVol">0.0000 SOL</div><div class="ks">Wagered</div></div>
+        <div class="kpi"><div class="kl">House Profit</div><div class="kv g" id="kProfit">0.0000 SOL</div><div class="ks">Edge earnings</div></div>
+        <div class="kpi"><div class="kl">Registered Players</div><div class="kv" id="kPlayers">0</div><div class="ks">Unique wallets</div></div>
+      </div>
+      <div class="g2">
+        <div class="card">
+          <div class="ch">📊 Recent Flips</div>
+          <div id="dashFlips" style="max-height:340px;overflow-y:auto">
+            <div class="empty">No flips yet</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="ch">⚙️ Current Config</div>
+          <div class="cb">
+            <table style="width:100%;font-size:13px;border-collapse:collapse">
+              <tr><td style="color:var(--text3);padding:6px 0;border-bottom:1px solid var(--border)">Flip Mode</td><td style="text-align:right;padding:6px 0;border-bottom:1px solid var(--border)"><span id="cfgMode" style="color:var(--sgreen);font-family:'Rajdhani',sans-serif;font-weight:700">RANDOM</span></td></tr>
+              <tr><td style="color:var(--text3);padding:6px 0;border-bottom:1px solid var(--border)">House Edge</td><td style="text-align:right;padding:6px 0;border-bottom:1px solid var(--border)" id="cfgEdge">4%</td></tr>
+              <tr><td style="color:var(--text3);padding:6px 0;border-bottom:1px solid var(--border)">Win Multiplier</td><td style="text-align:right;padding:6px 0;border-bottom:1px solid var(--border)" id="cfgMult">1.92×</td></tr>
+              <tr><td style="color:var(--text3);padding:6px 0;border-bottom:1px solid var(--border)">Min / Max Bet</td><td style="text-align:right;padding:6px 0;border-bottom:1px solid var(--border)" id="cfgBets">0.001 / 0.5 SOL</td></tr>
+              <tr><td style="color:var(--text3);padding:6px 0;border-bottom:1px solid var(--border)">Network</td><td style="text-align:right;padding:6px 0;border-bottom:1px solid var(--border)" id="cfgNet">Testnet</td></tr>
+              <tr><td style="color:var(--text3);padding:6px 0">Treasury Balance</td><td style="text-align:right;padding:6px 0;color:var(--sgreen);font-family:'Orbitron',monospace;font-size:12px" id="cfgTreasury">0.0000 SOL</td></tr>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FLIP CONTROL -->
+    <div class="tab" id="tab-flipCtrl">
+      <div class="g2">
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div class="card">
+            <div class="ch">🎲 Flip Mode <span id="modeBadge" style="margin-left:auto;background:rgba(20,241,149,.1);color:var(--sgreen);padding:2px 9px;border-radius:20px;font-size:10.5px;font-weight:700">RANDOM</span></div>
+            <div class="cb">
+              <div class="modes">
+                <div class="mode sel" id="m-random" onclick="selMode('random')">
+                  <div class="mode-rd"></div>
+                  <div class="mode-body"><div class="mn">🎲 RANDOM — Provably Fair</div><div class="md">sha256(txSignature + serverSeed) — players can verify results</div></div>
+                </div>
+                <div class="mode" id="m-weighted" onclick="selMode('weighted')">
+                  <div class="mode-rd"></div>
+                  <div class="mode-body">
+                    <div class="mn">⚖️ WEIGHTED — Custom Win Rate</div>
+                    <div class="md">Set exact probability of player winning each flip</div>
+                    <div class="mode-x">
+                      <span style="font-size:12px;color:var(--text3)">Player win %:</span>
+                      <input type="number" id="wtRate" value="50" min="0" max="100" step="1" style="width:65px;padding:4px 8px;font-size:12px">
+                      <span style="font-size:12px;color:var(--text3)">%</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="mode" id="m-forceHeads" onclick="selMode('forceHeads')">
+                  <div class="mode-rd"></div>
+                  <div class="mode-body">
+                    <div class="mn">🟡 FORCE HEADS — Always lands Heads</div>
+                    <div class="md">Every flip result is Heads regardless of player choice</div>
+                    <div class="mode-x">
+                      <label class="rl"><input type="radio" name="fhd" value="indefinite" checked><span>Indefinite</span></label>
+                      <label class="rl"><input type="radio" name="fhd" value="next"><span>Next only</span></label>
+                    </div>
+                  </div>
+                </div>
+                <div class="mode" id="m-forceTails" onclick="selMode('forceTails')">
+                  <div class="mode-rd"></div>
+                  <div class="mode-body">
+                    <div class="mn">🟢 FORCE TAILS — Always lands Tails</div>
+                    <div class="md">Every flip result is Tails regardless of player choice</div>
+                    <div class="mode-x">
+                      <label class="rl"><input type="radio" name="ftd" value="indefinite" checked><span>Indefinite</span></label>
+                      <label class="rl"><input type="radio" name="ftd" value="next"><span>Next only</span></label>
+                    </div>
+                  </div>
+                </div>
+                <div class="mode" id="m-pattern" onclick="selMode('pattern')">
+                  <div class="mode-rd"></div>
+                  <div class="mode-body">
+                    <div class="mn">🔁 PATTERN — Custom Repeating Sequence</div>
+                    <div class="md">Set a sequence that repeats (e.g. H,T,H,H,T → loops)</div>
+                    <div class="mode-x" style="flex-direction:column;align-items:flex-start;gap:4px">
+                      <input type="text" id="patInp" value="H,T,H,H,T" placeholder="H,T,H,H,T" style="font-size:12px;padding:5px 10px;margin-top:4px">
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <button class="btn btn-p fw mt" onclick="saveMode()">💾 SAVE & APPLY IMMEDIATELY</button>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div class="card">
+            <div class="ch">💰 House Edge & Multiplier</div>
+            <div class="cb">
+              <label>House Edge (1–50%)</label>
+              <div class="sl-wrap">
+                <div class="sl-val" id="edgeDisp">4%</div>
+                <input type="range" id="edgeSlider" min="1" max="50" value="4" oninput="updEdge(this.value)">
+                <div class="sl-info">Win Multiplier: <strong id="multDisp">1.9200×</strong>&nbsp;&nbsp;|&nbsp;&nbsp;Formula: (1 − edge) × 2</div>
+              </div>
+              <button class="btn btn-p mt" onclick="saveEdge()">Save Edge</button>
+            </div>
+          </div>
+          <div class="card">
+            <div class="ch">📏 Bet Limits</div>
+            <div class="cb">
+              <div class="row2">
+                <div><label>Min Bet (SOL)</label><input type="number" id="minBet" value="0.001" min="0.0001" step="0.001"></div>
+                <div><label>Max Bet (SOL)</label><input type="number" id="maxBet" value="0.5" min="0.01" step="0.1"></div>
+                <div><label>Max Payout (SOL)</label><input type="number" id="maxPay" value="5" min="0.1"></div>
+                <div><label>Flip Cooldown (s)</label><input type="number" id="flipCD" value="5" min="0"></div>
+              </div>
+              <button class="btn btn-p mt" onclick="saveLimits()">Save Limits</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PLAYERS -->
+    <div class="tab" id="tab-players">
+      <div class="card">
+        <div class="ch">👥 Players</div>
+        <div class="cb">
+          <div class="s-row">
+            <input class="s-inp" id="pSearch" placeholder="Search wallet…" oninput="renderPlayers()">
+            <select id="pFilter" style="width:150px" onchange="renderPlayers()">
+              <option value="all">All Players</option>
+              <option value="active">Active</option>
+              <option value="banned">Banned</option>
+            </select>
+            <button class="btn btn-s btn-sm" onclick="renderPlayers()">↻ Refresh</button>
+          </div>
+          <table class="tbl">
+            <thead><tr>
+              <th onclick="sortPlayers('wallet')">Wallet</th>
+              <th onclick="sortPlayers('flips')">Flips</th>
+              <th onclick="sortPlayers('wins')">Win Rate</th>
+              <th onclick="sortPlayers('volume')">Volume</th>
+              <th onclick="sortPlayers('pnl')">P&L</th>
+              <th>Status</th>
+              <th>Last Seen</th>
+              <th>Actions</th>
+            </tr></thead>
+            <tbody id="playersTb"><tr><td colspan="8" class="empty">No players found</td></tr></tbody>
+          </table>
+          <div class="pag">
+            <button class="pag-b" onclick="prevPg()">← Prev</button>
+            <span style="font-size:12px;color:var(--text3)">Page <span id="pgNum">1</span></span>
+            <button class="pag-b" onclick="nextPg()">Next →</button>
+            <span style="font-size:12px;color:var(--text3);margin-left:auto" id="pgInfo"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TREASURY -->
+    <div class="tab" id="tab-treasury">
+      <div class="card mb">
+        <div class="t-hdr">
+          <div style="display:flex;align-items:center;gap:7px;margin-bottom:5px">
+            <span style="width:8px;height:8px;background:var(--sgreen);border-radius:50%;display:inline-block;box-shadow:0 0 8px var(--sgreen)"></span>
+            <span style="font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--text2)">Active Treasury</span>
+          </div>
+          <div class="t-addr" id="tAddr">No treasury wallet set</div>
+          <div class="t-bal" id="tBal">0.0000 <span style="font-size:15px;color:var(--text3)">SOL</span></div>
+          <div class="t-acts">
+            <button class="btn btn-s btn-sm" onclick="copyAddr()">📋 Copy</button>
+            <button class="btn btn-s btn-sm" onclick="openExpl()">🔗 Explorer</button>
+            <button class="btn btn-s btn-sm" onclick="refreshTreasury()">↻ Refresh</button>
+          </div>
+        </div>
+        <div style="padding:0 17px 17px">
+          <div style="font-family:'Rajdhani',sans-serif;font-size:11.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--text2);padding:13px 0 10px">All Wallets</div>
+          <table class="tbl">
+            <thead><tr><th>#</th><th>Label / Address</th><th>Balance</th><th>Status</th><th>Flips</th><th>Actions</th></tr></thead>
+            <tbody id="walletsTb"><tr><td colspan="6" class="empty">No wallets added</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="g2">
+        <div class="card">
+          <div class="ch">➕ Add Treasury Wallet</div>
+          <div class="cb">
+            <div style="display:flex;gap:16px;margin-bottom:12px">
+              <label class="rl" style="margin:0"><input type="radio" name="wt" value="gen" checked onchange="toggleImport()"><span style="font-size:13px">Generate New Keypair</span></label>
+              <label class="rl" style="margin:0"><input type="radio" name="wt" value="imp" onchange="toggleImport()"><span style="font-size:13px">Import Private Key</span></label>
+            </div>
+            <label>Label (optional)</label>
+            <input type="text" id="wLabel" placeholder="e.g. Treasury 2">
+            <div id="impWrap" style="display:none">
+              <label>Solana Address</label>
+              <input type="text" id="impAddr" placeholder="Public key (address)">
+            </div>
+            <button class="btn btn-p mt" onclick="addWallet()">Generate / Import</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="ch">💸 Withdraw SOL</div>
+          <div class="cb">
+            <label>From Wallet</label>
+            <select id="wFrom"><option>No wallets added</option></select>
+            <label>To Address</label>
+            <input type="text" id="wTo" placeholder="Destination Solana address">
+            <div class="row2">
+              <div><label>Amount (SOL)</label><input type="number" id="wAmt" placeholder="0.00" min="0" step="0.01"></div>
+              <div><label>Admin Password</label><input type="password" id="wPass" placeholder="Confirm…"></div>
+            </div>
+            <button class="btn btn-g mt" onclick="doWithdraw()">Withdraw</button>
+          </div>
+        </div>
+      </div>
+      <div class="card" style="margin-top:14px">
+        <div class="ch">🔄 Auto-Switch Rules</div>
+        <div class="cb">
+          <div class="row2">
+            <div><label>Auto-switch when balance below (SOL)</label><input type="number" id="asBelow" value="1" min="0" step="0.1"></div>
+            <div><label>Alert when below (SOL)</label><input type="number" id="alertB" value="2.0" min="0" step="0.1"></div>
+          </div>
+          <button class="btn btn-p mt" onclick="saveAutoSwitch()">Save Rules</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SETTINGS -->
+    <div class="tab" id="tab-settings">
+      <div class="g2">
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div class="card">
+            <div class="ch">🌐 Game Settings</div>
+            <div class="cb">
+              <label>Network</label>
+              <select id="netSel" onchange="updRpc()">
+                <option value="testnet">Testnet</option>
+                <option value="mainnet">Mainnet Beta</option>
+                <option value="devnet">Devnet</option>
+                <option value="custom">Custom RPC</option>
+              </select>
+              <label>Custom RPC URL</label>
+              <input type="text" id="rpcUrl" value="https://api.testnet.solana.com">
+              <label style="margin-top:13px">Treasury Private Key (base58)</label>
+              <input type="password" id="treasPrivKey" placeholder="Paste base58 private key for autopayout...">
+              <div style="font-size:11px;color:var(--text3);margin-top:4px;line-height:1.5">Used to auto-pay winners. Stored only in solflip_db.json on your server — never sent to players' browsers.</div>
+              <button class="btn btn-p mt" onclick="saveGameSet()">Save Game Settings</button>
+            </div>
+          </div>
+          <div class="card">
+            <div class="ch">🔑 Change Admin Password</div>
+            <div class="cb">
+              <label>Current Password</label><input type="password" id="cPass" placeholder="Current…">
+              <label>New Password</label><input type="password" id="nPass" placeholder="New…">
+              <label>Confirm New</label><input type="password" id="cfPass" placeholder="Confirm…">
+              <button class="btn btn-p mt" onclick="changePass()">Change Password</button>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div class="card">
+            <div class="ch">💬 Chat Settings</div>
+            <div class="cb">
+              <label class="chk" style="margin-bottom:13px"><input type="checkbox" id="chatEn" checked><span>Chat Enabled</span></label>
+              <div class="row2">
+                <div><label>Message Cooldown (s)</label><input type="number" id="msgCD" value="3" min="0"></div>
+                <div><label>Max Message Length</label><input type="number" id="maxML" value="120" min="10"></div>
+              </div>
+              <button class="btn btn-p mt" onclick="saveChatSet()">Save Chat Settings</button>
+            </div>
+          </div>
+          <div class="danger">
+            <div class="d-title">⚠️ Danger Zone</div>
+            <div class="d-desc">These actions are irreversible. Type CONFIRM in the prompt when asked.</div>
+            <div class="d-btns">
+              <button class="btn btn-d" onclick="clearFlips()">Clear Flip History</button>
+              <button class="btn btn-d" onclick="resetPlayers()">Reset Players</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- LIVE -->
+    <div class="tab" id="tab-live">
+      <div class="g2">
+        <div class="card">
+          <div class="ch">
+            <div style="display:flex;align-items:center;gap:7px">
+              <span style="width:7px;height:7px;background:var(--sgreen);border-radius:50%;display:inline-block;animation:pulse 1.5s infinite"></span>
+              <span id="livePC">0</span>&nbsp;PLAYERS ONLINE NOW
+            </div>
+          </div>
+          <table class="tbl">
+            <thead><tr><th>Wallet</th><th>Status</th><th>Joined</th><th>Actions</th></tr></thead>
+            <tbody id="livePTb"><tr><td colspan="4" class="empty">No players online</td></tr></tbody>
+          </table>
+        </div>
+        <div class="card">
+          <div class="ch">
+            <span>⚡ Real-Time Flip Stream</span>
+            <button class="btn btn-s btn-sm" onclick="loadLiveStream()">↻ Refresh</button>
+          </div>
+          <div id="flipStream" style="max-height:500px;overflow-y:auto">
+            <div class="empty">Waiting for flips…</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /admin -->
+
+<div class="toast" id="toast"></div>
+
+<script src="db.js"></script>
+<script>
+// ══ AUTH ══
+function doLogin() {
+  const u = document.getElementById('lu').value;
+  const p = document.getElementById('lp').value;
+  fetch('/api/admin/login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ user: u, pass: p })
+  }).then(r => r.json()).then(d => {
+    if (d.ok) {
+      sessionStorage.setItem('sfAdmin', '1');
+      sessionStorage.setItem('sfToken', d.token);
+      document.getElementById('loginWrap').style.display = 'none';
+      document.getElementById('adminUI').style.display   = 'flex';
+      loadAll();
+    } else {
+      document.getElementById('lErr').style.display = 'block';
+      document.getElementById('lErr').textContent   = 'Invalid credentials';
+    }
+  }).catch(e => {
+    // Fallback to localStorage if server not available
+    const s = DB.getSettings();
+    if (u === (s.adminUser || 'admin') && p === (s.adminPass || 'admin123')) {
+      sessionStorage.setItem('sfAdmin','1');
+      document.getElementById('loginWrap').style.display = 'none';
+      document.getElementById('adminUI').style.display   = 'flex';
+      loadAll();
+    } else {
+      document.getElementById('lErr').style.display = 'block';
+      document.getElementById('lErr').textContent   = 'Invalid credentials';
+    }
+  });
+}
+function doLogout() {
+  sessionStorage.removeItem('sfAdmin');
+  document.getElementById('loginWrap').style.display = 'flex';
+  document.getElementById('adminUI').style.display   = 'none';
+  document.getElementById('lu').value = '';
+  document.getElementById('lp').value = '';
+}
+if (sessionStorage.getItem('sfAdmin') === '1') {
+  document.getElementById('loginWrap').style.display = 'none';
+  document.getElementById('adminUI').style.display   = 'flex';
+}
+
+// ══ TABS ══
+function showTab(name, btn) {
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.nb').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+  btn.classList.add('active');
+  if (name==='dashboard') updDash();
+  if (name==='players')   renderPlayers();
+  if (name==='treasury')  renderWallets();
+  if (name==='live')      loadLiveStream();
+}
+
+// ══ LOAD ALL ══
+function loadAll() {
+  const s = DB.getSettings();
+  // Flip control
+  selMode(s.flipMode || 'random', false);
+  document.getElementById('wtRate').value     = s.weightedRate || 50;
+  document.getElementById('patInp').value     = s.flipPattern  || 'H,T,H,H,T';
+  document.getElementById('edgeSlider').value = s.houseEdge    || 4;
+  updEdge(s.houseEdge || 4);
+  document.getElementById('minBet').value = s.minBet    || 0.001;
+  document.getElementById('maxBet').value = s.maxBet    || 0.5;
+  document.getElementById('maxPay').value = s.maxPayout || 5;
+  document.getElementById('flipCD').value = s.flipCooldown || 5;
+  // Settings
+  document.getElementById('netSel').value  = s.network  || 'testnet';
+  document.getElementById('rpcUrl').value  = s.rpcUrl   || 'https://api.testnet.solana.com';
+  document.getElementById('chatEn').checked= s.chatEnabled !== false;
+  document.getElementById('msgCD').value   = s.msgCooldown || 3;
+  document.getElementById('maxML').value   = s.maxMsgLen  || 120;
+  document.getElementById('asBelow').value = s.autoSwitchBelow || 1;
+  document.getElementById('alertB').value  = s.alertBelow      || 2;
+  updDash(); renderWallets();
+}
+
+// ══ DASHBOARD ══
+function updDash() {
+  const st = DB.getStats();
+  const s  = DB.getSettings();
+  document.getElementById('kFlips').textContent   = st.totalFlips;
+  document.getElementById('kVol').textContent     = st.totalVolume.toFixed(4) + ' SOL';
+  document.getElementById('kProfit').textContent  = Math.max(0, st.houseProfit).toFixed(4) + ' SOL';
+  document.getElementById('kPlayers').textContent = st.totalPlayers;
+  const edge = s.houseEdge || 4;
+  const mult = DB.getMultiplier(edge);
+  document.getElementById('cfgMode').textContent  = (s.flipMode||'random').toUpperCase();
+  document.getElementById('cfgEdge').textContent  = edge + '%';
+  document.getElementById('cfgMult').textContent  = mult + '×';
+  document.getElementById('cfgBets').textContent  = (s.minBet||0.001) + ' / ' + (s.maxBet||0.5) + ' SOL';
+  document.getElementById('cfgNet').textContent   = (s.network||'testnet').charAt(0).toUpperCase()+(s.network||'testnet').slice(1);
+  const aw = DB.getActiveWallet();
+  document.getElementById('cfgTreasury').textContent = aw ? (aw.balance||0).toFixed(4) + ' SOL' : 'Not set';
+  // Recent flips
+  const flips = DB.getFlips().slice(0, 20);
+  const cont = document.getElementById('dashFlips');
+  if (!flips.length) { cont.innerHTML = '<div class="empty">No flips yet</div>'; return; }
+  cont.innerHTML = flips.map(f => `
+    <div class="stream-item">
+      <div class="s-dot ${f.result==='heads'?'s-H':'s-T'}">${f.result==='heads'?'H':'T'}</div>
+      <div style="flex:1">
+        <div style="font-size:11.5px;color:var(--text2)">${f.wallet?f.wallet.slice(0,8)+'…':'?'}</div>
+        <div style="font-size:11px;color:var(--text3)">${fmtDate(f.ts)}</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:12px">${f.bet} SOL → <span class="${f.won?'ow':'ol'}">${f.won?'+'+((f.bet*f.mult-f.bet).toFixed(4)):'-'+f.bet}</span></div>
+        <div style="font-size:11px;color:var(--text3)">${f.result.toUpperCase()}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ══ FLIP MODE ══
+let curMode = 'random';
+function selMode(mode, trigger=true) {
+  curMode = mode;
+  document.querySelectorAll('.mode').forEach(el=>el.classList.remove('sel'));
+  const el = document.getElementById('m-'+mode);
+  if (el) el.classList.add('sel');
+  if (trigger) updModeBadge();
+}
+function updModeBadge() {
+  const labels = {random:'RANDOM',weighted:'WEIGHTED',forceHeads:'FORCE HEADS',forceTails:'FORCE TAILS',pattern:'PATTERN'};
+  document.getElementById('modeBadge').textContent = labels[curMode]||curMode.toUpperCase();
+}
+function saveMode() {
+  const obj = { flipMode: curMode };
+  if (curMode==='weighted') obj.weightedRate = +document.getElementById('wtRate').value;
+  if (curMode==='pattern')  obj.flipPattern  = document.getElementById('patInp').value;
+  obj.patternIndex = 0;
+  DB.saveSettings(obj);
+  updModeBadge(); updDash();
+  toast('Flip mode: ' + curMode.toUpperCase() + ' applied', 's');
+}
+function updEdge(v) {
+  const m = ((1-v/100)*2).toFixed(4);
+  document.getElementById('edgeDisp').textContent = v+'%';
+  document.getElementById('multDisp').textContent = m+'×';
+}
+function saveEdge() {
+  DB.saveSettings({ houseEdge: +document.getElementById('edgeSlider').value });
+  updDash(); toast('House edge saved', 's');
+}
+function saveLimits() {
+  DB.saveSettings({
+    minBet:     +document.getElementById('minBet').value,
+    maxBet:     +document.getElementById('maxBet').value,
+    maxPayout:  +document.getElementById('maxPay').value,
+    flipCooldown:+document.getElementById('flipCD').value,
+  });
+  updDash(); toast('Bet limits saved', 's');
+}
+
+// ══ GAME SETTINGS ══
+function updRpc() {
+  const rpcs={testnet:'https://api.testnet.solana.com',mainnet:'https://api.mainnet-beta.solana.com',devnet:'https://api.devnet.solana.com'};
+  const n = document.getElementById('netSel').value;
+  if (n !== 'custom') document.getElementById('rpcUrl').value = rpcs[n];
+}
+function saveGameSet() {
+  var payload = {
+    network: document.getElementById('netSel').value,
+    rpcUrl:  document.getElementById('rpcUrl').value,
+  };
+  var pk = document.getElementById('treasPrivKey').value.trim();
+  if (pk) payload.treasuryPrivKey = pk;
+  // Save to server
+  var token = sessionStorage.getItem('sfToken') || '';
+  fetch('/api/admin/settings', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-admin-token': token },
+    body: JSON.stringify(payload)
+  }).then(function(r){ return r.json(); }).then(function(d){
+    if (d.ok) {
+      toast('Game settings saved! Treasury: ' + (d.settings.treasuryAddress || 'not set'), 's');
+      document.getElementById('treasPrivKey').value = '';
+    } else { toast('Error: ' + d.error, 'e'); }
+  }).catch(function(e){ toast('Server error: ' + e.message, 'e'); });
+}
+function saveChatSet() {
+  DB.saveSettings({
+    chatEnabled: document.getElementById('chatEn').checked,
+    msgCooldown: +document.getElementById('msgCD').value,
+    maxMsgLen:   +document.getElementById('maxML').value,
+  });
+  toast('Chat settings saved', 's');
+}
+function changePass() {
+  const s = DB.getSettings();
+  const c = document.getElementById('cPass').value;
+  const n = document.getElementById('nPass').value;
+  const f = document.getElementById('cfPass').value;
+  if (c !== (s.adminPass||'admin123')) { toast('Current password wrong', 'e'); return; }
+  if (n !== f) { toast('Passwords do not match', 'e'); return; }
+  if (n.length < 6) { toast('Min 6 characters', 'e'); return; }
+  DB.saveSettings({ adminPass: n });
+  ['cPass','nPass','cfPass'].forEach(id=>document.getElementById(id).value='');
+  toast('Password changed!', 's');
+}
+
+// ══ DANGER ══
+function clearFlips() {
+  if (prompt('Type CONFIRM to clear all flip history:') === 'CONFIRM') {
+    DB.clearFlips(); updDash(); toast('Flip history cleared', 's');
+  }
+}
+function resetPlayers() {
+  if (prompt('Type CONFIRM to reset all players:') === 'CONFIRM') {
+    DB.resetPlayers(); renderPlayers(); toast('Players reset', 's');
+  }
+}
+
+// ══ TREASURY ══
+function renderWallets() {
+  const wallets = DB.getTreasuryWallets();
+  const aw = DB.getActiveWallet();
+  document.getElementById('tAddr').textContent = aw ? aw.address : 'No treasury wallet set';
+  document.getElementById('tBal').innerHTML = (aw ? (aw.balance||0).toFixed(4) : '0.0000') + ' <span style="font-size:15px;color:var(--text3)">SOL</span>';
+  const tb = document.getElementById('walletsTb');
+  if (!wallets.length) { tb.innerHTML = '<tr><td colspan="6" class="empty">No wallets added</td></tr>'; return; }
+  tb.innerHTML = wallets.map((w,i) => `
+    <tr>
+      <td>${i+1}</td>
+      <td><div style="font-weight:600;color:var(--text)">${w.label||'Wallet '+(i+1)}</div><div class="mono">${w.address.slice(0,18)}…</div></td>
+      <td style="color:${(w.balance||0)>0?'var(--sgreen)':'var(--orange)'}">${(w.balance||0).toFixed(4)} SOL ${(w.balance||0)<1?'⚠️':''}</td>
+      <td>${w.active?'<span class="badge badge-a"><span class="badge-d"></span>Active</span>':'<span class="badge">Inactive</span>'}</td>
+      <td>${w.flips||0}</td>
+      <td style="display:flex;gap:5px;padding:6px 13px">
+        ${!w.active?`<button class="btn btn-s btn-sm" onclick="setActiveW('${w.address}')">Set Active</button>`:''}
+        <button class="btn btn-d btn-sm" onclick="removeW('${w.address}')">✕</button>
+      </td>
+    </tr>
+  `).join('');
+  // Populate withdraw dropdown
+  const sel = document.getElementById('wFrom');
+  sel.innerHTML = wallets.map(w=>`<option value="${w.address}">${w.label||'Wallet'} (${(w.balance||0).toFixed(3)} SOL)</option>`).join('');
+}
+function setActiveW(addr) { DB.setActiveWallet(addr); renderWallets(); toast('Active wallet updated', 's'); }
+function removeW(addr) {
+  if (!confirm('Remove this wallet?')) return;
+  const s = DB.getSettings();
+  const ws = (s.treasuryWallets||[]).filter(w=>w.address!==addr);
+  DB.saveSettings({ treasuryWallets: ws }); renderWallets(); toast('Wallet removed', 's');
+}
+function copyAddr() {
+  const a = DB.getActiveWallet();
+  if (!a) { toast('No active wallet', 'e'); return; }
+  navigator.clipboard.writeText(a.address).then(()=>toast('Address copied!','s'));
+}
+function openExpl() {
+  const a = DB.getActiveWallet();
+  if (!a) { toast('No active wallet', 'e'); return; }
+  const s = DB.getSettings();
+  const cluster = s.network === 'mainnet' ? '' : '?cluster=' + (s.network||'testnet');
+  window.open('https://explorer.solana.com/address/'+a.address+cluster,'_blank');
+}
+function refreshTreasury() {
+  const a = DB.getActiveWallet(); if (!a) { toast('No active wallet','e'); return; }
+  fetch(DB.getSettings().rpcUrl||'https://api.testnet.solana.com',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({jsonrpc:'2.0',id:1,method:'getBalance',params:[a.address,{commitment:'confirmed'}]})})
+    .then(r=>r.json()).then(d=>{
+      if (d.result) {
+        const bal = d.result.value/1e9;
+        const s = DB.getSettings();
+        const ws = (s.treasuryWallets||[]).map(w=>w.address===a.address?{...w,balance:bal}:w);
+        DB.saveSettings({treasuryWallets:ws}); renderWallets(); toast('Balance refreshed: '+bal.toFixed(4)+' SOL','s');
+      }
+    }).catch(e=>toast('RPC error: '+e.message,'e'));
+}
+function toggleImport() {
+  const isImp = document.querySelector('input[name="wt"]:checked').value === 'imp';
+  document.getElementById('impWrap').style.display = isImp ? 'block' : 'none';
+}
+function addWallet() {
+  const type  = document.querySelector('input[name="wt"]:checked').value;
+  const label = document.getElementById('wLabel').value.trim() || 'Treasury';
+  if (type === 'imp') {
+    const addr = document.getElementById('impAddr').value.trim();
+    if (!addr || addr.length < 32) { toast('Enter valid Solana address','e'); return; }
+    DB.addTreasuryWallet({ label, address: addr, active: false, flips: 0, balance: 0 });
+    toast('Wallet imported: '+label,'s');
+  } else {
+    // In browser we can't generate a real keypair without web3.js
+    // We show instructions
+    toast('To generate: use Phantom/Solana CLI then import the public address','w');
+    return;
+  }
+  document.getElementById('wLabel').value = '';
+  document.getElementById('impAddr').value = '';
+  renderWallets();
+}
+function doWithdraw() {
+  const to   = document.getElementById('wTo').value.trim();
+  const amt  = document.getElementById('wAmt').value;
+  const pass = document.getElementById('wPass').value;
+  const s    = DB.getSettings();
+  if (!to)   { toast('Enter destination address','e'); return; }
+  if (!amt || parseFloat(amt)<=0) { toast('Enter valid amount','e'); return; }
+  if (pass !== (s.adminPass||'admin123')) { toast('Wrong admin password','e'); return; }
+  toast('Withdrawal: use Phantom or CLI to send '+amt+' SOL from treasury to '+to.slice(0,10)+'…','w');
+}
+function saveAutoSwitch() {
+  DB.saveSettings({ autoSwitchBelow:+document.getElementById('asBelow').value, alertBelow:+document.getElementById('alertB').value });
+  toast('Auto-switch rules saved','s');
+}
+
+// ══ PLAYERS ══
+let pgPage = 1, pgSort = 'flips', pgDir = -1;
+const PG = 15;
+function sortPlayers(col) { if(pgSort===col) pgDir*=-1; else{pgSort=col;pgDir=-1;} renderPlayers(); }
+function prevPg() { if(pgPage>1){pgPage--;renderPlayers();} }
+function nextPg() { pgPage++; renderPlayers(); }
+function renderPlayers() {
+  let players = DB.getPlayers();
+  const q = document.getElementById('pSearch').value.toLowerCase();
+  const f = document.getElementById('pFilter').value;
+  if (q) players = players.filter(p=>p.wallet.toLowerCase().includes(q));
+  if (f==='active') players = players.filter(p=>!p.banned);
+  if (f==='banned') players = players.filter(p=>p.banned);
+  players.sort((a,b)=>{
+    const av=a[pgSort]||0, bv=b[pgSort]||0;
+    return pgDir*(av<bv?-1:av>bv?1:0);
+  });
+  const total = players.length;
+  const start = (pgPage-1)*PG;
+  const page  = players.slice(start, start+PG);
+  document.getElementById('pgInfo').textContent = `${total} players`;
+  document.getElementById('pgNum').textContent  = pgPage;
+  const tb = document.getElementById('playersTb');
+  if (!page.length) { tb.innerHTML='<tr><td colspan="8" class="empty">No players found</td></tr>'; return; }
+  tb.innerHTML = page.map(p=>{
+    const wr = p.flips ? (p.wins/p.flips*100).toFixed(0)+'%' : '—';
+    return `<tr>
+      <td class="mono">${p.wallet.slice(0,10)}…${p.wallet.slice(-4)}</td>
+      <td>${p.flips||0}</td>
+      <td>${wr}</td>
+      <td>${(p.volume||0).toFixed(4)} SOL</td>
+      <td class="${(p.pnl||0)>=0?'ow':'ol'}">${(p.pnl||0)>=0?'+':''}${(p.pnl||0).toFixed(4)}</td>
+      <td>${p.banned?'<span class="badge badge-b">Banned</span>':'<span class="badge badge-a"><span class="badge-d"></span>Active</span>'}</td>
+      <td style="font-size:11px;color:var(--text3)">${p.lastSeen?fmtDate(p.lastSeen):'—'}</td>
+      <td><button class="btn ${p.banned?'btn-p':'btn-d'} btn-sm" onclick="toggleBan('${p.wallet}',${!p.banned})">${p.banned?'Unban':'Ban'}</button></td>
+    </tr>`;
+  }).join('');
+}
+function toggleBan(wallet, ban) { DB.banPlayer(wallet, ban); renderPlayers(); toast((ban?'Banned':'Unbanned')+': '+wallet.slice(0,10)+'…', ban?'w':'s'); }
+
+// ══ LIVE ══
+function loadLiveStream() {
+  const flips = DB.getFlips().slice(0, 40);
+  const cont = document.getElementById('flipStream');
+  if (!flips.length) { cont.innerHTML = '<div class="empty">Waiting for flips…</div>'; return; }
+  cont.innerHTML = flips.map(f=>`
+    <div class="stream-item">
+      <div class="s-dot ${f.result==='heads'?'s-H':'s-T'}">${f.result==='heads'?'H':'T'}</div>
+      <div style="flex:1">
+        <span style="font-size:12px;color:var(--text2)">${f.wallet?f.wallet.slice(0,10)+'…':'?'}</span>
+        <span style="font-size:11px;color:var(--text3);margin-left:8px">${fmtDate(f.ts)}</span>
+      </div>
+      <div style="text-align:right;font-size:12px">
+        <span>${f.bet} SOL</span>
+        <span class="${f.won?'ow':'ol'}" style="margin-left:8px">${f.won?'WIN':'LOSE'}</span>
+        <div style="font-size:11px;color:var(--text3)">${f.txSig?f.txSig.slice(0,12)+'…':''}</div>
+      </div>
+    </div>
+  `).join('');
+}
+// Auto-refresh live tab every 5s
+setInterval(()=>{ if(document.getElementById('tab-live').classList.contains('active')) loadLiveStream(); }, 5000);
+
+// ══ HELPERS ══
+function fmtDate(iso) {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  return d.toLocaleDateString()+' '+d.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+}
+let toastT;
+function toast(msg, type='i') {
+  clearTimeout(toastT);
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.className = 'toast '+type+' show';
+  toastT = setTimeout(()=>el.classList.remove('show'),3200);
+}
+
+// ══ CROSS-TAB SYNC ══
+DB.onChange(key => {
+  if (key===DB.KEYS.FLIPS)   { if(document.getElementById('tab-dashboard').classList.contains('active')) updDash(); }
+  if (key===DB.KEYS.PLAYERS) { if(document.getElementById('tab-players').classList.contains('active'))  renderPlayers(); }
+});
+
+// ══ INIT ══
+if (sessionStorage.getItem('sfAdmin') === '1') loadAll();
+</script>
+</body>
+</html>
