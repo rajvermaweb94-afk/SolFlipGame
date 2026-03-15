@@ -19,7 +19,8 @@ body::before{content:'';position:fixed;inset:0;background:
 @keyframes spinning{to{transform:rotate(360deg)}}
 @keyframes msgIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
 @keyframes dotPop{from{transform:scale(0)}to{transform:scale(1)}}
-@keyframes coinSpin{0%{transform:rotateY(0) translateY(0)}30%{transform:rotateY(900deg) translateY(-55px) scale(1.06)}70%{transform:rotateY(1350deg) translateY(-20px)}100%{transform:rotateY(var(--end-rot))}}
+@keyframes coinSpin{0%{transform:rotateY(0deg)}100%{transform:rotateY(var(--end-rot))}}
+@keyframes coinBounce{0%{transform:translateY(0) scale(1)}30%{transform:translateY(-55px) scale(1.06)}70%{transform:translateY(-20px) scale(1.02)}100%{transform:translateY(0) scale(1)}}
 @keyframes resultPop{from{transform:scale(.6);opacity:0}to{transform:scale(1);opacity:1}}
 @keyframes gs{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
 @keyframes floatUp{0%{opacity:1;transform:translateY(0) scale(1)}100%{opacity:0;transform:translateY(-130px) scale(.5)}}
@@ -96,7 +97,7 @@ header{position:sticky;top:0;z-index:200;background:rgba(6,10,18,.96);backdrop-f
 .crosshair::before{width:1px;height:7px;left:50%;top:50%;transform:translate(-50%,-50%)}
 .crosshair::after{width:7px;height:1px;left:50%;top:50%;transform:translate(-50%,-50%)}
 .coin-wrapper{transform-style:preserve-3d;transition:transform .08s linear;user-select:none}
-.coin{width:160px;height:160px;transform-style:preserve-3d;transition:transform 1.6s cubic-bezier(.23,1,.32,1);position:relative}
+.coin{width:160px;height:160px;transform-style:preserve-3d;transition:transform .6s cubic-bezier(.4,0,.2,1);position:relative;will-change:transform}
 .face{position:absolute;width:100%;height:100%;border-radius:50%;backface-visibility:hidden;display:flex;align-items:center;justify-content:center;flex-direction:column}
 .face-h{background:radial-gradient(circle at 38% 32%,#f8de78,#d49610 55%,#8a5e00 90%);
   box-shadow:inset -6px -6px 16px rgba(0,0,0,.45),inset 3px 3px 10px rgba(255,255,255,.22),0 0 35px rgba(212,150,10,.55),0 0 70px rgba(212,150,10,.18);border:2.5px solid #e0ae1a}
@@ -111,7 +112,8 @@ header{position:sticky;top:0;z-index:200;background:rgba(6,10,18,.96);backdrop-f
 .coin-lbl{font-family:'Orbitron',monospace;font-size:7px;font-weight:700;letter-spacing:.2em;color:rgba(0,0,0,.6);text-transform:uppercase;margin-top:5px}
 .tails-sym{font-size:44px;line-height:1}
 .tails-lbl{font-family:'Orbitron',monospace;font-size:7.5px;font-weight:700;letter-spacing:.18em;color:rgba(0,0,0,.65);text-transform:uppercase;margin-top:4px}
-.coin.flipping{animation:coinSpin 1.7s cubic-bezier(.4,0,.2,1) forwards}
+.coin.flipping{animation:coinSpin 1.6s cubic-bezier(.4,0,.2,1) forwards}
+.coin-wrapper.bouncing{animation:coinBounce 1.6s cubic-bezier(.4,0,.2,1) forwards}
 .coin.show-t{transform:rotateY(180deg)}
 .result-ov{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
   background:rgba(6,10,18,.8);backdrop-filter:blur(6px);opacity:0;pointer-events:none;
@@ -216,7 +218,6 @@ header{position:sticky;top:0;z-index:200;background:rgba(6,10,18,.96);backdrop-f
   border-radius:50%;
   object-fit:cover;
   display:block;
-  /* 3-D edge bevel via layered shadows */
   box-shadow:
     inset 0 3px 8px rgba(255,255,255,.25),
     inset 0 -3px 8px rgba(0,0,0,.55),
@@ -224,9 +225,10 @@ header{position:sticky;top:0;z-index:200;background:rgba(6,10,18,.96);backdrop-f
     0 0 0 6px #8a6200,
     0 8px 32px rgba(0,0,0,.7),
     0 2px 6px rgba(200,152,10,.5);
-  /* knurled edge illusion */
-  outline:4px solid transparent;
-  outline-offset:2px;
+  will-change:transform;
+  -webkit-backface-visibility:hidden;
+  backface-visibility:hidden;
+  transform:translateZ(0);
 }
 /* shine overlay for 3-D pop */
 .face-h::after,
@@ -351,11 +353,7 @@ header{position:sticky;top:0;z-index:200;background:rgba(6,10,18,.96);backdrop-f
     <span id="connShort">...</span> ▾
   </button>
   <div class="wallet-menu" id="walletMenu">
-    <div class="wm-addr" id="wmAddr"></div>
-    <div class="wm-bal" id="wmBal">0.0000 SOL</div>
-    <button class="wm-btn" onclick="copyWalletAddr()">📋 Copy Address</button>
-    <button class="wm-btn" onclick="openExplorer()">🔗 View on Explorer</button>
-    <button class="wm-btn signout" onclick="disconnWallet()">🚪 Sign Out</button>
+    <button class="wm-btn signout" onclick="disconnWallet()" style="padding:12px 16px;font-size:13px">🚪 Disconnect Wallet</button>
   </div>
 </div>
   </div>
@@ -429,8 +427,8 @@ header{position:sticky;top:0;z-index:200;background:rgba(6,10,18,.96);backdrop-f
     <div class="sec-lbl">Bet Amount</div>
     <div class="bet-row"><input class="bet-inp" id="betAmt" type="number" value="0.01" min="0.001" step="0.001" oninput="updPayout()"><span class="bet-cur">SOL</span></div>
     <div class="qbets">
-      <div class="qb" onclick="setBet(0.01)">0.01</div><div class="qb" onclick="setBet(0.05)">0.05</div>
-      <div class="qb" onclick="setBet(0.10)">0.10</div><div class="qb" onclick="setBet(0.25)">0.25</div>
+      <div class="qb" onclick="setBet(0.01)">0.01</div><div class="qb" onclick="setBet(0.02)">0.02</div>
+      <div class="qb" onclick="setBet(0.05)">0.05</div><div class="qb" onclick="setBet(0.10)">0.10</div>
     </div>
     <div class="mults"><div class="mb" onclick="halfBet()">&#189;&#215;</div><div class="mb" onclick="dblBet()">2&#215;</div><div class="mb" onclick="maxBet()">MAX</div></div>
   </div></div>
@@ -544,7 +542,7 @@ function onConn() {
   document.getElementById('connectBtn').innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> ' + short;
   document.getElementById('connectBtn').classList.add('connected');
   fetchBal();
-  toast('Wallet connected! Ready to flip', 's');
+  toast('Wallet connected!', 's', 2000);
   apiChat('Game', pubkey.slice(0,6) + '... joined the game', true);
 }
 function disconnWallet() {
@@ -553,7 +551,7 @@ function disconnWallet() {
   resetConnBtn();
   document.getElementById('balVal').innerHTML = '0.0000 <span style="font-size:13px;color:var(--text3)">SOL</span>';
   document.getElementById('balUsd').textContent = 'Connect wallet to start';
-  toast('Disconnected', 'i');
+  toast('Disconnected', 'i', 2000);
 }
 function setConnBtn(html) { document.getElementById('connectBtn').innerHTML = html; }
 function resetConnBtn() {
@@ -651,13 +649,24 @@ async function doFlip() {
   // Step 3: Animate coin
   btn.innerHTML = '<span class="spin"></span> FLIPPING...';
   var coin = document.getElementById('coin');
+  var wrapper = document.getElementById('coinWrapper');
   coin.style.setProperty('--end-rot', (result === 'heads' ? 1440 : 1620) + 'deg');
+  // Pre-decode images to avoid GPU lag mid-spin
+  var imgH = coin.querySelector('.face-h img');
+  var imgT = coin.querySelector('.face-t img');
+  if (imgH && imgH.decode) imgH.decode().catch(function(){});
+  if (imgT && imgT.decode) imgT.decode().catch(function(){});
   coin.classList.add('flipping');
+  if (wrapper) wrapper.classList.add('bouncing');
 
   setTimeout(async function() {
     coin.classList.remove('flipping');
+    if (wrapper) wrapper.classList.remove('bouncing');
+    // Instant face switch without transition flash
+    coin.style.transition = 'none';
     if (result === 'tails') coin.classList.add('show-t');
     else coin.classList.remove('show-t');
+    setTimeout(function(){ coin.style.transition = ''; }, 50);
 
     // Refresh real on-chain balance
     await fetchBal();
@@ -763,6 +772,17 @@ function pickSide(s) {
   side = s;
   document.getElementById('btnH').className = 'side-btn' + (s === 'heads' ? ' ah' : '');
   document.getElementById('btnT').className = 'side-btn' + (s === 'tails' ? ' at' : '');
+  var coin = document.getElementById('coin');
+  if (coin && !flipping) {
+    coin.style.opacity = '0.7';
+    coin.style.transition = 'transform .35s cubic-bezier(.4,0,.6,1), opacity .15s';
+    if (s === 'tails') coin.classList.add('show-t');
+    else coin.classList.remove('show-t');
+    setTimeout(function() {
+      coin.style.opacity = '1';
+      setTimeout(function(){ coin.style.transition = ''; }, 400);
+    }, 80);
+  }
 }
 
 // CHAT — server backed, polls every 3s
@@ -877,13 +897,13 @@ function showPhantomModal(type) {
 
 // TOAST
 var toastT;
-function toast(msg, type) {
+function toast(msg, type, dur) {
   type = type || 'i';
   clearTimeout(toastT);
   var el = document.getElementById('toast');
   el.textContent = msg;
   el.className = 'toast ' + type + ' show';
-  toastT = setTimeout(function() { el.classList.remove('show'); }, 3500);
+  toastT = setTimeout(function() { el.classList.remove('show'); }, dur||3500);
 }
 
 // INIT
@@ -1091,11 +1111,8 @@ onConn = function() {
   // Fill dropdown
   var short = pubkey.slice(0,5) + '...' + pubkey.slice(-4);
   var cs = document.getElementById('connShort');
-  var wa = document.getElementById('wmAddr');
   if (cs) cs.textContent = short;
-  if (wa) wa.textContent = pubkey;
   sfxConnect();
-  // update balance display in menu
   updateWalletMenu();
 };
 
@@ -1111,8 +1128,7 @@ disconnWallet = function() {
 };
 
 function updateWalletMenu() {
-  var wb = document.getElementById('wmBal');
-  if (wb) wb.textContent = balance.toFixed(4) + ' SOL';
+
 }
 
 // Override updBalUI to also update menu
