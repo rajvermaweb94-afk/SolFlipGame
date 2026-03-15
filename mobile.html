@@ -33,6 +33,13 @@ body::before{content:'';position:fixed;inset:0;
   30% {transform:translateY(-40px) scale(1.06)}
   60% {transform:translateY(-10px) scale(1.02)}
   100%{transform:translateY(0) scale(1)}}
+@keyframes coinIdle{
+  0%  {transform:rotateY(0deg) rotateX(8deg)}
+  50% {transform:rotateY(180deg) rotateX(-8deg)}
+  100%{transform:rotateY(360deg) rotateX(8deg)}}
+@keyframes coinFloat{
+  0%,100%{transform:translateY(0)}
+  50%     {transform:translateY(-8px)}}
 @keyframes resultPop{from{transform:scale(.4);opacity:0}to{transform:scale(1);opacity:1}}
 @keyframes gs{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
 @keyframes floatUp{0%{opacity:1;transform:translateY(0)}100%{opacity:0;transform:translateY(-110px)}}
@@ -102,15 +109,15 @@ body::before{content:'';position:fixed;inset:0;
 .nb.hn .ndot{display:block}
 
 /* GAME PAGE elements */
-.hs{padding:8px 13px;background:var(--panel);border-bottom:1px solid var(--border);
-  display:flex;align-items:center;gap:5px;flex-wrap:wrap;min-height:40px}
+.hs{padding:0 13px;background:var(--panel);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:5px;flex-wrap:nowrap;height:36px;overflow:hidden}
 .ld{width:7px;height:7px;background:var(--red);border-radius:50%;box-shadow:0 0 6px var(--red);flex-shrink:0}
 .ll{font-size:9.5px;color:var(--red);font-family:'Rajdhani',sans-serif;font-weight:700;letter-spacing:.1em;margin-right:4px}
-.hbd{width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;
-  font-size:8.5px;font-weight:700;font-family:'Rajdhani',sans-serif;flex-shrink:0;animation:dotPop .2s ease}
+.hbd{width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font-size:8px;font-weight:700;font-family:'Rajdhani',sans-serif;flex-shrink:0;animation:dotPop .2s ease}
 .hbd.H{background:rgba(245,197,66,.18);color:var(--gold);border:1px solid rgba(245,197,66,.35)}
 .hbd.T{background:rgba(20,241,149,.12);color:var(--sgreen);border:1px solid rgba(20,241,149,.3)}
-.hbs{margin-left:auto;display:flex;gap:8px;font-size:10px;color:var(--text3);font-family:'Rajdhani',sans-serif;font-weight:600}
+.hbs{margin-left:auto;display:flex;gap:8px;font-size:10px;color:var(--text3);font-family:'Rajdhani',sans-serif;font-weight:600;flex-shrink:0}
 
 /* COIN STAGE */
 .cs{height:230px;background:linear-gradient(180deg,#090f1e 0%,#060a12 100%);
@@ -122,12 +129,14 @@ body::before{content:'';position:fixed;inset:0;
 .cg{position:absolute;width:180px;height:180px;border-radius:50%;
   background:radial-gradient(circle,rgba(153,69,255,.1) 0%,transparent 70%);pointer-events:none;transition:background .4s}
 .cw{position:relative;transform-style:preserve-3d;user-select:none;transition:transform .08s linear;will-change:transform}
-.cw::before{content:'';position:absolute;inset:-5px;border-radius:50%;
-  background:repeating-conic-gradient(#c8980a 0deg,#8a6200 3deg,#c8980a 6deg,#8a6200 9deg,#c8980a 12deg);
+.cw::before{content:'';position:absolute;inset:-3px;border-radius:50%;
+  background:repeating-conic-gradient(#c8980a 0deg,#8a6200 2deg,#c8980a 4deg,#8a6200 6deg,#c8980a 8deg);
   z-index:-1}
 .coin{width:140px;height:140px;transform-style:preserve-3d;
   transition:transform .6s cubic-bezier(.4,0,.2,1);position:relative;
   will-change:transform}
+.coin.idle{animation:coinIdle 4s linear infinite,coinFloat 3s ease-in-out infinite;transition:none}
+.cw.idle-wrap{animation:none}
 .face{position:absolute;width:100%;height:100%;border-radius:50%;
   backface-visibility:hidden;display:flex;align-items:center;justify-content:center}
 .face-h{}
@@ -136,8 +145,8 @@ body::before{content:'';position:fixed;inset:0;
   background:radial-gradient(ellipse 55% 40% at 35% 28%,rgba(255,255,255,.22) 0%,rgba(255,255,255,.04) 45%,transparent 70%);
   pointer-events:none;z-index:2}
 .ci{width:100%;height:100%;border-radius:50%;object-fit:cover;display:block;
-  box-shadow:inset 0 3px 8px rgba(255,255,255,.25),inset 0 -3px 8px rgba(0,0,0,.55),
-    0 0 0 3px #c8980a,0 0 0 6px #8a6200,0 8px 32px rgba(0,0,0,.7);
+  box-shadow:inset 0 2px 5px rgba(255,255,255,.15),inset 0 -2px 5px rgba(0,0,0,.45),
+    0 0 0 2px #c8980a,0 0 0 4px #7a5400,0 4px 16px rgba(0,0,0,.7);
   will-change:transform;image-rendering:auto;
   -webkit-backface-visibility:hidden;backface-visibility:hidden;
   transform:translateZ(0)}
@@ -201,7 +210,8 @@ body::before{content:'';position:fixed;inset:0;
 .sb.ah{border-color:var(--gold);background:rgba(245,197,66,.08);box-shadow:0 0 18px rgba(245,197,66,.2)}
 .sb.at{border-color:var(--sgreen);background:rgba(20,241,149,.08);box-shadow:0 0 18px rgba(20,241,149,.18)}
 .sci{width:54px;height:54px;border-radius:50%;object-fit:cover;
-  box-shadow:0 0 0 2.5px #c8980a,0 0 0 4.5px #6a4a00,0 4px 14px rgba(0,0,0,.6)}
+  box-shadow:0 0 0 2px #c8980a,0 0 0 3.5px #6a4a00,0 3px 10px rgba(0,0,0,.5);
+  -webkit-backface-visibility:hidden;backface-visibility:hidden}
 .sb.ah .sci{box-shadow:0 0 0 2.5px #f5c542,0 0 0 4.5px #8a6200,0 0 18px rgba(245,197,66,.55),0 4px 14px rgba(0,0,0,.5)}
 .sb.at .sci{box-shadow:0 0 0 2.5px #14f195,0 0 0 4.5px #006644,0 0 18px rgba(20,241,149,.45),0 4px 14px rgba(0,0,0,.5)}
 .sn{font-family:'Rajdhani',sans-serif;font-size:14px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text2)}
@@ -328,7 +338,7 @@ body::before{content:'';position:fixed;inset:0;
   <div class="hs">
     <span class="ld"></span>
     <span class="ll">LIVE</span>
-    <div id="histDots" style="display:flex;gap:3px;flex-wrap:wrap;flex:1"></div>
+    <div id="histDots" style="display:flex;gap:3px;flex-wrap:nowrap;flex:1;overflow:hidden;min-width:0"></div>
     <div class="hbs">
       <span>H:<span id="hc" style="color:var(--gold);margin-left:2px">0</span></span>
       <span>T:<span id="tc" style="color:var(--sgreen);margin-left:2px">0</span></span>
@@ -419,7 +429,7 @@ body::before{content:'';position:fixed;inset:0;
   <div class="chat-outer">
     <div class="chat-hdr">
       <span style="width:6px;height:6px;background:var(--sgreen);border-radius:50%;display:inline-block;animation:pulse 1.5s infinite"></span>
-      <span id="onlineCnt">1</span>&nbsp;online &nbsp;&#183;&nbsp; Live Chat
+      <span id="onlineCnt">1000+</span>&nbsp;online &nbsp;&#183;&nbsp; Live Chat
     </div>
     <div class="chat-msgs" id="chatMsgs"></div>
     <div class="chat-foot">
@@ -641,7 +651,7 @@ function onConn() {
   if (np && srvSettings.network) np.textContent = srvSettings.network.toUpperCase();
   fetchBal();
   sfxConnect();
-  toast('Wallet connected!', 's', 2000);
+  // toast hidden on mobile — wallet button shows connected state
   apiChat('Game', pubkey.slice(0,6) + '... joined', true);
 }
 
@@ -656,7 +666,7 @@ function disconnWallet() {
   if (wm) wm.classList.remove('open');
   updBalUI();
   document.getElementById('balUsd').textContent = 'Connect wallet to start';
-  toast('Disconnected', 'i', 2000);
+  // toast hidden on mobile — wallet button shows disconnected state
 }
 
 // ── WALLET DROPDOWN ──────────────────────────────────
@@ -746,6 +756,8 @@ async function doFlip() {
   var endRot = result === 'heads' ? 1440 : 1620;
   coin.style.setProperty('--end-rot', endRot + 'deg');
   coin.classList.remove('show-t'); // reset first
+  coin.classList.remove('idle');   // stop idle rotation during flip
+  window._coinIdleActive = false;
   // Pre-load images to avoid decode lag mid-spin
   var imgH = document.getElementById('coinImgH');
   var imgT = document.getElementById('coinImgT');
@@ -794,6 +806,11 @@ async function doFlip() {
       btn.innerHTML = '\uD83C\uDFB2 FLIP COIN';
       // Restore coin to show selected side
       updateCoinFace(side);
+      // Resume idle rotation after 1.5s
+      setTimeout(function() {
+        var c2 = document.getElementById('coin');
+        if (c2 && !flipping) { c2.classList.add('idle'); window._coinIdleActive = true; }
+      }, 1500);
     }, 3000);
 
   }, 1900);
@@ -948,6 +965,11 @@ async function loadStats() {
     if (!document.getElementById('histDots').children.length) {
       d.recentFlips.slice(0,24).reverse().forEach(function(f){ addHistDot(f.result); });
     }
+    // Update online count — always show 1000+, add real active count on top
+    var realCount = (d.totalPlayers || 0);
+    var displayCount = realCount > 0 ? (1000 + realCount) : 1000;
+    var ocEl = document.getElementById('onlineCnt');
+    if (ocEl) ocEl.textContent = displayCount.toLocaleString() + '+';
   } catch(e) {}
 }
 
@@ -1097,6 +1119,13 @@ document.addEventListener('DOMContentLoaded', function() {
     setInterval(loadSrvSettings, 30000);
     // Welcome msg
     renderMsg({id:0,name:'System',text:'Welcome to SolFlip! Connect your Phantom wallet to play.',system:true,gameEvent:false});
+    // Start idle coin animation
+    var idleCoin = document.getElementById('coin');
+    if (idleCoin) {
+      idleCoin.classList.add('idle');
+      // Store reference to stop on flip
+      window._coinIdleActive = true;
+    }
     // Auto-reconnect
     if (window.solana && window.solana.isPhantom) {
       window.solana.connect({onlyIfTrusted:true})
