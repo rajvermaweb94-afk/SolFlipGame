@@ -727,6 +727,8 @@ function doLogout() {
 if (sessionStorage.getItem('sfAdmin') === '1') {
   document.getElementById('loginWrap').style.display = 'none';
   document.getElementById('adminUI').style.display   = 'flex';
+  // Load latest settings from server on page refresh
+  loadAll();
 }
 
 // ══ TABS ══
@@ -748,7 +750,22 @@ function showTab(name, btn) {
 
 // ══ LOAD ALL ══
 function loadAll() {
-  const s = DB.getSettings();
+  // Load settings from SERVER first (source of truth), fall back to localStorage
+  var token = sessionStorage.getItem('sfToken') || '';
+  fetch('/api/admin/settings', {
+    headers: { 'Content-Type': 'application/json', 'x-admin-token': token }
+  }).then(function(r) { return r.json(); }).then(function(d) {
+    var s = d.ok ? d.settings : DB.getSettings();
+    // Also sync localStorage with server settings so they stay in sync
+    if (d.ok) DB.saveSettings(s);
+    applySettings(s);
+  }).catch(function() {
+    // Fallback to localStorage if server unreachable
+    applySettings(DB.getSettings());
+  });
+}
+
+function applySettings(s) {
   // Flip control
   selMode(s.flipMode || 'random', false);
   document.getElementById('wtRate').value     = s.weightedRate || 50;
@@ -759,14 +776,14 @@ function loadAll() {
   document.getElementById('maxBet').value = s.maxBet    || 0.5;
   document.getElementById('maxPay').value = s.maxPayout || 5;
   document.getElementById('flipCD').value = s.flipCooldown || 5;
-  // Settings
-  document.getElementById('netSel').value  = s.network  || 'testnet';
-  document.getElementById('rpcUrl').value  = s.rpcUrl   || 'https://api.testnet.solana.com';
-  document.getElementById('chatEn').checked= s.chatEnabled !== false;
-  document.getElementById('msgCD').value   = s.msgCooldown || 3;
-  document.getElementById('maxML').value   = s.maxMsgLen  || 120;
-  document.getElementById('asBelow').value = s.autoSwitchBelow || 1;
-  document.getElementById('alertB').value  = s.alertBelow      || 2;
+  // Settings tab
+  document.getElementById('netSel').value   = s.network  || 'mainnet';
+  document.getElementById('rpcUrl').value   = s.rpcUrl   || 'https://api.mainnet-beta.solana.com';
+  document.getElementById('chatEn').checked = s.chatEnabled !== false;
+  document.getElementById('msgCD').value    = s.msgCooldown || 3;
+  document.getElementById('maxML').value    = s.maxMsgLen  || 120;
+  document.getElementById('asBelow').value  = s.autoSwitchBelow || 1;
+  document.getElementById('alertB').value   = s.alertBelow      || 2;
   updDash(); renderWallets();
 }
 
@@ -851,7 +868,10 @@ function saveLimits() {
 function updRpc() {
   const rpcs={testnet:'https://api.testnet.solana.com',mainnet:'https://api.mainnet-beta.solana.com',devnet:'https://api.devnet.solana.com'};
   const n = document.getElementById('netSel').value;
-  if (n !== 'custom') document.getElementById('rpcUrl').value = rpcs[n];
+  if (n !== 'custom') {
+    document.getElementById('rpcUrl').value = rpcs[n];
+  }
+  // If switching TO custom, keep current URL so user can see/edit their Helius URL
 }
 function saveGameSet() {
   var payload = {
@@ -868,10 +888,15 @@ function saveGameSet() {
     body: JSON.stringify(payload)
   }).then(function(r){ return r.json(); }).then(function(d){
     if (d.ok) {
-      toast('Game settings saved! Treasury: ' + (d.settings.treasuryAddress || 'not set'), 's');
+      // Sync saved settings back to localStorage so UI stays consistent
+      DB.saveSettings(d.settings);
+      toast('Settings saved! Network: ' + (d.settings.network || 'mainnet').toUpperCase() +
+            ' | Treasury: ' + (d.settings.treasuryAddress ? d.settings.treasuryAddress.slice(0,8)+'...' : 'not set'), 's');
       document.getElementById('treasPrivKey').value = '';
+      // Reload settings into UI to confirm what was saved
+      applySettings(d.settings);
     } else { toast('Error: ' + d.error, 'e'); }
-  }).catch(function(e){ toast('Server error: ' + e.message, 'e'); });
+  }).catch(function(e){ toast('Server error: ' + e.message + ' — check server is running', 'e'); });
 }
 function saveChatSet() {
   DB.saveSettings({
