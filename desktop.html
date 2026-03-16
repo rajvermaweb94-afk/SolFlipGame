@@ -188,16 +188,20 @@ header{position:sticky;top:0;z-index:200;background:rgba(6,10,18,.96);backdrop-f
 .side-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .side-btn{padding:15px 10px;border-radius:12px;border:2px solid var(--border);
   background:rgba(255,255,255,.03);cursor:pointer;display:flex;flex-direction:column;
-  align-items:center;justify-content:center;gap:6px;transition:all .18s;position:relative}
+  align-items:center;justify-content:center;gap:6px;
+  transition:border-color .18s,background .18s,box-shadow .18s;
+  position:relative;min-height:110px}
 .side-btn:hover{border-color:var(--border2)}
 .side-btn.ah{border-color:var(--gold);background:rgba(245,197,66,.07);box-shadow:0 0 18px rgba(245,197,66,.18)}
 .side-btn.at{border-color:var(--sgreen);background:rgba(20,241,149,.07);box-shadow:0 0 18px rgba(20,241,149,.14)}
-.side-coin-img{width:56px;height:56px;border-radius:50%;object-fit:cover;
+.side-coin-img{width:58px;height:58px;border-radius:50%;object-fit:cover;
+  flex-shrink:0;
   box-shadow:0 0 0 2px #c8980a,0 0 0 3.5px #6a4a00,0 3px 10px rgba(0,0,0,.5);
-  -webkit-backface-visibility:hidden;backface-visibility:hidden;transition:transform .2s}
+  -webkit-backface-visibility:hidden;backface-visibility:hidden;
+  transition:box-shadow .18s,transform .18s}
 .side-btn.ah .side-coin-img{box-shadow:0 0 0 2.5px #f5c542,0 0 0 4.5px #8a6200,0 0 18px rgba(245,197,66,.55),0 4px 14px rgba(0,0,0,.5)}
 .side-btn.at .side-coin-img{box-shadow:0 0 0 2.5px #14f195,0 0 0 4.5px #006644,0 0 18px rgba(20,241,149,.45),0 4px 14px rgba(0,0,0,.5)}
-.side-btn:hover .side-coin-img{transform:scale(1.06)}
+.side-btn:hover .side-coin-img{transform:scale(1.05)}
 .side-name{font-family:'Rajdhani',sans-serif;font-size:14px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text2)}
 .side-btn.ah .side-name{color:var(--gold)}.side-btn.at .side-name{color:var(--sgreen)}
 .side-chk{position:absolute;top:6px;right:6px;width:15px;height:15px;border-radius:50%;display:none;align-items:center;justify-content:center;font-size:9px;font-weight:700}
@@ -838,10 +842,11 @@ function updPayout() {
 }
 function pickSide(s) {
   side = s;
-  document.getElementById('btnH').className = 'sb '+(s==='heads'?'ah':'');
-  document.getElementById('btnT').className = 'sb '+(s==='tails'?'at':'');
+  // Use correct CSS class 'side-btn' (not 'sb')
+  document.getElementById('btnH').className = 'side-btn'+(s==='heads'?' ah':'');
+  document.getElementById('btnT').className = 'side-btn'+(s==='tails'?' at':'');
   sfxPick();
-  // Small delay so CSS class is set before face update
+  // Small delay so CSS class settles before face switch
   setTimeout(function() { updateCoinFace(s); }, 10);
 }
 
@@ -884,7 +889,7 @@ function renderMsg(m) {
   var nb = document.getElementById('navChat');
   if (nb && !nb.classList.contains('active')) nb.classList.add('hn');
 }
-async function apiChat(name, text, gameEvent) {
+async async function apiChat(name, text, gameEvent) {
   try { await api('/api/chat',{method:'POST',body:JSON.stringify({name:name,text:text,gameEvent:!!gameEvent})}); } catch(e) {}
 }
 async function pollChat() {
@@ -893,6 +898,12 @@ async function pollChat() {
     d.messages.forEach(function(m) {
       if (m.id > lastChatId) { renderMsg(m); lastChatId = Math.max(lastChatId, m.id); }
     });
+    // Update online count from chat data
+    if (d.onlineCount !== undefined) {
+      var base = 1000;
+      var oc = document.getElementById('onlineCnt');
+      if (oc) oc.textContent = (base + d.onlineCount).toLocaleString() + '+';
+    }
   } catch(e) {}
 }
 function sendChat() {
