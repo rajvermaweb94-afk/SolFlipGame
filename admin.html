@@ -293,6 +293,7 @@ input[type=range]{width:100%;height:4px;background:var(--border);border-radius:2
       onkeydown="if(event.key==='Enter')doLogin()">
     <button class="l-btn" onclick="doLogin()">ENTER ADMIN</button>
     <div class="l-err" id="lErr"></div>
+    <div style="font-size:10px;color:var(--text3);margin-top:12px;opacity:.6">Default: admin &nbsp;/&nbsp; admin123</div>
   </div>
 </div>
 
@@ -746,95 +747,69 @@ input[type=range]{width:100%;height:4px;background:var(--border);border-radius:2
 // ══ AUTH ══
 function showErr(msg) {
   var el = document.getElementById('lErr');
+  if (!el) return;
   el.textContent = msg;
   el.style.display = 'block';
 }
 function hideErr() {
   var el = document.getElementById('lErr');
-  el.style.display = 'none';
+  if (el) el.style.display = 'none';
 }
 function enterAdmin(token) {
-  if (token) sessionStorage.setItem('sfToken', token);
   sessionStorage.setItem('sfAdmin', '1');
+  if (token) sessionStorage.setItem('sfToken', token);
   document.getElementById('loginWrap').style.display = 'none';
   document.getElementById('adminUI').style.display   = 'flex';
   hideErr();
-  loadAll();
+  try { loadAll(); } catch(e) { console.error('loadAll error:', e); }
 }
-
 function doLogin() {
-  var u = (document.getElementById('lu').value || '').trim();
-  var p = (document.getElementById('lp').value || '').trim();
+  var u   = (document.getElementById('lu').value  || '').trim();
+  var p   = (document.getElementById('lp').value  || '').trim();
   var btn = document.querySelector('.l-btn');
+  var err = document.getElementById('lErr');
 
-  if (!u || !p) { showErr('Enter username and password'); return; }
+  if (!u || !p) { showErr('Please enter username and password'); return; }
 
-  // Show loading state
   if (btn) { btn.disabled = true; btn.textContent = 'Logging in...'; }
   hideErr();
 
-  // Try server login first
   fetch('/api/admin/login', {
-    method: 'POST',
+    method:  'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ user: u, pass: p })
+    body:    JSON.stringify({ user: u, pass: p })
   })
-  .then(function(r) {
-    if (!r.ok && r.status !== 401) throw new Error('Server error ' + r.status);
-    return r.json();
-  })
+  .then(function(r) { return r.json(); })
   .then(function(d) {
     if (btn) { btn.disabled = false; btn.textContent = 'ENTER ADMIN'; }
     if (d.ok) {
       enterAdmin(d.token);
     } else {
-      // Server says wrong credentials — also check defaults in case DB not seeded yet
-      if (u === 'admin' && p === 'admin123') {
-        // Generate token manually and enter
-        var tok = 'sf_' + btoa(p);
-        enterAdmin(tok);
-      } else {
-        showErr('Wrong username or password');
-      }
+      showErr('Wrong username or password');
     }
   })
-  .catch(function(err) {
+  .catch(function() {
     if (btn) { btn.disabled = false; btn.textContent = 'ENTER ADMIN'; }
-    // Server unreachable — use default credentials or localStorage
-    var s = DB.getSettings();
-    var validUser = s.adminUser || 'admin';
-    var validPass = s.adminPass || 'admin123';
-    if (u === validUser && p === validPass) {
-      var tok = 'sf_' + btoa(p);
-      enterAdmin(tok);
-    } else if (u === 'admin' && p === 'admin123') {
-      // Always allow default creds as last resort
+    // Server unreachable - allow default credentials offline
+    if (u === 'admin' && p === 'admin123') {
       enterAdmin('sf_' + btoa('admin123'));
     } else {
-      showErr('Wrong credentials. Default: admin / admin123');
+      showErr('Cannot reach server. Use: admin / admin123');
     }
   });
 }
 function doLogout() {
   sessionStorage.removeItem('sfAdmin');
   sessionStorage.removeItem('sfToken');
-  // Reset login form
+  document.getElementById('loginWrap').style.display = 'flex';
+  document.getElementById('adminUI').style.display   = 'none';
   var lu = document.getElementById('lu');
   var lp = document.getElementById('lp');
   if (lu) lu.value = '';
   if (lp) lp.value = '';
   hideErr();
-  document.getElementById('loginWrap').style.display = 'flex';
-  document.getElementById('adminUI').style.display   = 'none';
-  document.getElementById('lu').value = '';
-  document.getElementById('lp').value = '';
 }
-if (sessionStorage.getItem('sfAdmin') === '1') {
-  document.getElementById('loginWrap').style.display = 'none';
-  document.getElementById('adminUI').style.display   = 'flex';
-  // Load latest settings from server on page refresh
-  loadAll();
-}
+
 
 // ══ TABS ══
 function showTab(name, btn) {
