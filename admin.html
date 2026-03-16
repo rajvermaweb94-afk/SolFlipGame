@@ -972,19 +972,17 @@ function saveLimits() {
 
 // ══ GAME SETTINGS ══
 function updRpc() {
-    const rpcs = {
-      testnet: 'https://api.testnet.solana.com',
-      mainnet: 'https://api.mainnet-beta.solana.com',
-      devnet:  'https://api.devnet.solana.com',
-      custom:  ''
-    };
-    const n = document.getElementById('netSel').value;
-    if (n !== 'custom') {
-      document.getElementById('rpcUrl').value = rpcs[n];
-    }
-    // Custom: keep whatever user typed (their Helius URL)
+  const rpcs = {
+    testnet: 'https://api.testnet.solana.com',
+    mainnet: 'https://api.mainnet-beta.solana.com',
+    devnet:  'https://api.devnet.solana.com',
+    custom:  ''
+  };
+  const n = document.getElementById('netSel').value;
+  if (n !== 'custom') {
+    document.getElementById('rpcUrl').value = rpcs[n];
   }
-  // If switching TO custom, keep current URL so user can see/edit their Helius URL
+  // If custom, keep whatever user typed (Helius URL)
 }
 function saveGameSet() {
   var rpcUrl = document.getElementById('rpcUrl').value.trim();
@@ -1225,7 +1223,11 @@ DB.onChange(key => {
 });
 
 // ══ INIT ══
-if (sessionStorage.getItem('sfAdmin') === '1') loadAll();
+if (sessionStorage.getItem('sfAdmin') === '1') {
+  document.getElementById('loginWrap').style.display = 'none';
+  document.getElementById('adminUI').style.display   = 'flex';
+  loadAll();
+}
 </script>
 </body>
 </html>
