@@ -45,6 +45,15 @@ function readDB() {
     // Merge defaults so new keys are added but SAVED values always win
     const def = getDefaultDB();
     saved.settings = Object.assign({}, def.settings, saved.settings);
+    // Auto-derive treasuryAddress from private key if missing or empty
+    if (saved.settings.treasuryPrivKey && !saved.settings.treasuryAddress) {
+      try {
+        const kp = Keypair.fromSecretKey(bs58.decode(saved.settings.treasuryPrivKey));
+        saved.settings.treasuryAddress = kp.publicKey.toString();
+        // Write back immediately so it persists
+        fs.writeFileSync(DB_FILE, JSON.stringify(saved, null, 2));
+      } catch(e) { /* invalid key format */ }
+    }
     return saved;
   } catch(e) { return getDefaultDB(); }
 }
@@ -195,6 +204,22 @@ const server = http.createServer(async (req, res) => {
       delete s.treasuryPrivKey; // never expose private key
       delete s.adminPass;
       return jsonOk(res, { settings: s });
+    }
+
+    // GET /api/fix-treasury — force re-derive treasury address (use once if treasury shows not set)
+    if (req.method === 'GET' && urlPath === '/api/fix-treasury') {
+      const db = readDB();
+      if (!db.settings.treasuryPrivKey) {
+        return jsonOk(res, { ok: false, message: 'No private key saved. Go to admin Settings and save your private key first.' });
+      }
+      try {
+        const kp = Keypair.fromSecretKey(bs58.decode(db.settings.treasuryPrivKey));
+        db.settings.treasuryAddress = kp.publicKey.toString();
+        writeDB(db);
+        return jsonOk(res, { ok: true, message: 'Treasury address fixed!', address: db.settings.treasuryAddress });
+      } catch(e) {
+        return jsonOk(res, { ok: false, message: 'Invalid private key: ' + e.message });
+      }
     }
 
     // GET /api/balance?wallet=... — proxy balance fetch (avoids browser CORS)
@@ -355,9 +380,18 @@ const server = http.createServer(async (req, res) => {
           try {
             const kp = Keypair.fromSecretKey(bs58.decode(body.treasuryPrivKey));
             db.settings.treasuryAddress = kp.publicKey.toString();
-          } catch(e) { return jsonErr(res, 'Invalid private key'); }
+            console.log('[TREASURY] Address set:', db.settings.treasuryAddress);
+          } catch(e) { return jsonErr(res, 'Invalid private key — check format is base58'); }
+        }
+        // Re-derive from stored key if address still missing
+        if (db.settings.treasuryPrivKey && !db.settings.treasuryAddress) {
+          try {
+            const kp = Keypair.fromSecretKey(bs58.decode(db.settings.treasuryPrivKey));
+            db.settings.treasuryAddress = kp.publicKey.toString();
+          } catch(e) {}
         }
         writeDB(db);
+        console.log('[SETTINGS] Saved. Network:', db.settings.network, '| Treasury:', db.settings.treasuryAddress || 'NOT SET');
         return jsonOk(res, { settings: db.settings });
       }
 
@@ -425,7 +459,19 @@ const server = http.createServer(async (req, res) => {
 });
 
 server.listen(PORT, () => {
+  // ── Auto-fix: derive treasuryAddress from private key if missing ──
   const db = readDB();
+  if (db.settings.treasuryPrivKey && !db.settings.treasuryAddress) {
+    try {
+      const kp = Keypair.fromSecretKey(bs58.decode(db.settings.treasuryPrivKey));
+      db.settings.treasuryAddress = kp.publicKey.toString();
+      writeDB(db);
+      console.log('[TREASURY] Auto-derived address:', db.settings.treasuryAddress);
+    } catch(e) {
+      console.log('[TREASURY] Warning: could not derive address from private key:', e.message);
+    }
+  }
+  // ── Also auto-derive on every readDB in case DB was reset ──
   console.log('');
   console.log('  ╔══════════════════════════════════════════╗');
   console.log('  ║        SOLFLIP SERVER RUNNING            ║');
