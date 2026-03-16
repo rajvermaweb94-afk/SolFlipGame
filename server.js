@@ -32,13 +32,20 @@ const {
 } = solanaWeb3;
 
 const PORT    = 8080;
-const DB_FILE = path.join(__dirname, 'solflip_db.json');
+// Use Railway volume path if set, else fall back to local file
+const DB_FILE = process.env.DB_PATH || path.join(__dirname, 'solflip_db.json');
+console.log('[DB] Database path:', DB_FILE);
+console.log('[DB] Using database file:', DB_FILE);
 
 // ── Database (JSON file) ─────────────────────────────────
 function readDB() {
   try {
     if (!fs.existsSync(DB_FILE)) return getDefaultDB();
-    return JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
+    const saved = JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
+    // Merge defaults so new keys are added but SAVED values always win
+    const def = getDefaultDB();
+    saved.settings = Object.assign({}, def.settings, saved.settings);
+    return saved;
   } catch(e) { return getDefaultDB(); }
 }
 function writeDB(db) {
@@ -82,7 +89,8 @@ function getConnection(db) {
     mainnet: 'https://api.mainnet-beta.solana.com',
     devnet:  'https://api.devnet.solana.com',
   };
-  const url = s.rpcUrl || rpcs[s.network] || rpcs.mainnet;
+  // Priority: env HELIUS_RPC > saved rpcUrl > network preset
+  const url = process.env.HELIUS_RPC || s.rpcUrl || rpcs[s.network] || rpcs.mainnet;
   return new Connection(url, 'confirmed');
 }
 
