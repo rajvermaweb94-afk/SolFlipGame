@@ -338,7 +338,7 @@ body::before{content:'';position:fixed;inset:0;
   <div class="hs">
     <span class="ld"></span>
     <span class="ll">LIVE</span>
-    <div id="histDots" style="display:flex;gap:3px;flex-wrap:nowrap;flex:1;overflow:hidden;min-width:0"></div>
+    <div id="histDots" style="display:flex;gap:3px;flex-wrap:nowrap;flex:1;overflow:hidden;min-width:0;justify-content:flex-end;align-items:center"></div>
     <div class="hbs">
       <span>H:<span id="hc" style="color:var(--gold);margin-left:2px">0</span></span>
       <span>T:<span id="tc" style="color:var(--sgreen);margin-left:2px">0</span></span>
@@ -473,14 +473,45 @@ body::before{content:'';position:fixed;inset:0;
 <div class="toast" id="toast"></div>
 
 <!-- PHANTOM MODAL -->
-<div id="phantomModal" style="display:none;position:fixed;inset:0;z-index:1000">
-  <div class="ph-back" id="phBack">
-    <div class="ph-sheet">
-      <div class="ph-handle"></div>
-      <div class="ph-icon" id="phIcon"></div>
-      <div class="ph-title" id="phTitle"></div>
-      <div class="ph-body" id="phBody"></div>
-      <div id="phActions"></div>
+<!-- Wallet Connect Modal -->
+<div id="walletModal" style="display:none;position:fixed;inset:0;z-index:1000">
+  <div id="walletBackdrop" style="position:absolute;inset:0;background:rgba(0,0,0,.8);backdrop-filter:blur(12px)"></div>
+  <div id="walletSheet" style="position:absolute;bottom:0;left:0;right:0;background:#0c1422;border:1px solid #1e2e48;border-radius:22px 22px 0 0;padding:0 0 32px;max-width:520px;margin:0 auto;animation:slideUp .3s cubic-bezier(.34,1.56,.64,1)">
+    <!-- Handle + Header -->
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px 0">
+      <div style="width:40px;height:4px;background:#1e2e48;border-radius:2px;margin:0 auto;position:absolute;left:50%;transform:translateX(-50%);top:10px"></div>
+      <div style="font-family:'Orbitron',monospace;font-size:15px;font-weight:700;color:#e2eaf8;padding-top:10px">Connect Wallet</div>
+      <button id="walletCloseBtn" style="background:rgba(255,255,255,.07);border:none;width:30px;height:30px;border-radius:50%;color:#7090b8;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;margin-top:10px;flex-shrink:0">&#10005;</button>
+    </div>
+    <div style="height:1px;background:#172034;margin:14px 0 8px"></div>
+    <!-- Wallet options -->
+    <div style="padding:0 16px;display:flex;flex-direction:column;gap:10px">
+      <!-- Phantom -->
+      <button id="connectPhantomBtn" style="width:100%;padding:16px 18px;background:rgba(153,69,255,.08);border:1.5px solid rgba(153,69,255,.3);border-radius:14px;display:flex;align-items:center;gap:14px;cursor:pointer;transition:all .15s;text-align:left">
+        <div style="width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg,#9945ff,#6728d4);display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 0 14px rgba(153,69,255,.4)">
+          <svg width="24" height="24" viewBox="0 0 128 128" fill="none"><path d="M64 0C28.7 0 0 28.7 0 64s28.7 64 64 64 64-28.7 64-64S99.3 0 64 0z" fill="#9945FF"/><path d="M110.3 64c0 25.5-20.8 46.3-46.3 46.3-25.5 0-46.3-20.8-46.3-46.3 0-25.5 20.8-46.3 46.3-46.3 25.5 0 46.3 20.8 46.3 46.3z" fill="white"/><path d="M83 55.4H73.4c-.8 0-1.5.3-2 .9L58 71.8l-5.8-6.8c-.5-.6-1.2-.9-2-.9H41c-.7 0-1.1.8-.7 1.4l13 15.4c1 1.2 2.8 1.2 3.8 0l27-32c.4-.6 0-1.5-.7-1.5H83z" fill="#9945FF"/></svg>
+        </div>
+        <div>
+          <div style="font-family:'Rajdhani',sans-serif;font-size:15px;font-weight:700;color:#e2eaf8;letter-spacing:.04em">PHANTOM</div>
+          <div style="font-size:11px;color:#7090b8;margin-top:2px">Solana wallet</div>
+        </div>
+        <div id="phantomStatus" style="margin-left:auto;font-size:10px;font-family:'Rajdhani',sans-serif;font-weight:700;letter-spacing:.08em;padding:3px 9px;border-radius:20px;background:rgba(20,241,149,.1);color:#14f195;border:1px solid rgba(20,241,149,.3)">DETECTED</div>
+      </button>
+      <!-- Solflare -->
+      <button id="connectSolflareBtn" style="width:100%;padding:16px 18px;background:rgba(252,163,33,.06);border:1.5px solid rgba(252,163,33,.25);border-radius:14px;display:flex;align-items:center;gap:14px;cursor:pointer;transition:all .15s;text-align:left">
+        <div style="width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg,#FC7227,#FCA321);display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 0 14px rgba(252,114,39,.35)">
+          <svg width="26" height="26" viewBox="0 0 200 200" fill="none"><circle cx="100" cy="100" r="100" fill="#FC7227"/><path d="M100 40l40 69H60L100 40z" fill="white"/><path d="M100 160l-40-69h80L100 160z" fill="rgba(255,255,255,.6)"/></svg>
+        </div>
+        <div>
+          <div style="font-family:'Rajdhani',sans-serif;font-size:15px;font-weight:700;color:#e2eaf8;letter-spacing:.04em">SOLFLARE</div>
+          <div style="font-size:11px;color:#7090b8;margin-top:2px">Solana wallet</div>
+        </div>
+        <div id="solflareStatus" style="margin-left:auto;font-size:10px;font-family:'Rajdhani',sans-serif;font-weight:700;letter-spacing:.08em;padding:3px 9px;border-radius:20px;background:rgba(255,255,255,.06);color:#7090b8;border:1px solid #172034">INSTALL</div>
+      </button>
+    </div>
+    <!-- Note -->
+    <div style="margin:14px 16px 0;padding:11px 14px;background:rgba(255,255,255,.03);border:1px solid #172034;border-radius:10px;font-size:11.5px;color:#5a8bb0;line-height:1.6;text-align:center">
+      New to Solana wallets? <a href="https://phantom.app" target="_blank" style="color:#9945ff;text-decoration:none;font-weight:600">Get Phantom</a> — free &amp; secure
     </div>
   </div>
 </div>
@@ -547,9 +578,13 @@ function sfxConnect() { [440,550,660,880].forEach(function(n,i){ tone(n,'sine',.
 function updateCoinFace(selectedSide) {
   var coin = document.getElementById('coin');
   if (!coin || flipping) return;
-  // Smooth face switch — brief fade via opacity
-  coin.style.opacity = '0.7';
-  coin.style.transition = 'transform .35s cubic-bezier(.4,0,.6,1), opacity .15s';
+  // Remove idle first so we can control position cleanly
+  var wasIdle = coin.classList.contains('idle');
+  if (wasIdle) { coin.classList.remove('idle'); window._coinIdleActive = false; }
+  // Smooth face switch
+  coin.style.opacity = '0.75';
+  coin.style.transition = 'transform .4s cubic-bezier(.4,0,.6,1), opacity .12s';
+  // Apply correct face
   if (selectedSide === 'tails') {
     coin.classList.add('show-t');
   } else {
@@ -557,7 +592,14 @@ function updateCoinFace(selectedSide) {
   }
   setTimeout(function() {
     coin.style.opacity = '1';
-    setTimeout(function() { coin.style.transition = ''; }, 400);
+    setTimeout(function() {
+      coin.style.transition = '';
+      // Resume idle if it was running
+      if (wasIdle && !flipping) {
+        coin.classList.add('idle');
+        window._coinIdleActive = true;
+      }
+    }, 420);
   }, 80);
 }
 
@@ -622,18 +664,8 @@ function resetConnBtn() {
 
 async function connectWallet() {
   if (pubkey) { disconnWallet(); return; }
-  // Inside Phantom browser
-  if (window.solana && window.solana.isPhantom) {
-    setConnBtn('<span class="spin"></span> ...');
-    try {
-      var resp = await window.solana.connect();
-      pubkey = resp.publicKey.toString();
-      onConn();
-    } catch(e) { resetConnBtn(); toast('Rejected', 'e'); }
-    return;
-  }
-  // Not in Phantom browser — show deep link modal
-  openPhantomModal('notinstalled');
+  // Always show wallet picker modal
+  openWalletModal();
 }
 
 function onConn() {
@@ -848,8 +880,10 @@ function addHistDot(r) {
   var d = document.createElement('div');
   d.className = 'hbd '+(r==='heads'?'H':'T');
   d.textContent = r==='heads'?'H':'T';
+  // Append to end so newest is always on the RIGHT
   c.appendChild(d);
-  while(c.children.length > 24) c.removeChild(c.firstChild);
+  // Remove oldest from start (left) when too many
+  while(c.children.length > 16) c.removeChild(c.firstChild);
 }
 
 function addHistRowM(f) {
@@ -889,7 +923,8 @@ function pickSide(s) {
   document.getElementById('btnH').className = 'sb '+(s==='heads'?'ah':'');
   document.getElementById('btnT').className = 'sb '+(s==='tails'?'at':'');
   sfxPick();
-  updateCoinFace(s);
+  // Small delay so CSS class is set before face update
+  setTimeout(function() { updateCoinFace(s); }, 10);
 }
 
 // ── PARTICLES ────────────────────────────────────────
@@ -963,7 +998,7 @@ async function loadStats() {
     document.getElementById('tc').textContent   = d.tailsCount;
     document.getElementById('totc').textContent = d.totalFlips;
     if (!document.getElementById('histDots').children.length) {
-      d.recentFlips.slice(0,24).reverse().forEach(function(f){ addHistDot(f.result); });
+      d.recentFlips.slice(0,16).reverse().forEach(function(f){ addHistDot(f.result); });
     }
     // Update online count — always show 1000+, add real active count on top
     var realCount = (d.totalPlayers || 0);
@@ -994,47 +1029,67 @@ async function loadStats() {
 })();
 
 // ── PHANTOM MODAL ────────────────────────────────────
-function openPhantomModal(type) {
-  var modal = document.getElementById('phantomModal');
+function openWalletModal() {
+  var modal = document.getElementById('walletModal');
   if (!modal) return;
   modal.style.display = 'block';
-  var pageUrl    = window.location.href;
-  var enc        = encodeURIComponent(pageUrl);
-  var deepLink   = 'https://phantom.app/ul/browse/'+enc+'?ref='+enc;
-  var icon  = document.getElementById('phIcon');
-  var title = document.getElementById('phTitle');
-  var body  = document.getElementById('phBody');
-  var acts  = document.getElementById('phActions');
-  var bs    = 'padding:13px;border:none;border-radius:11px;cursor:pointer;font-family:Rajdhani,sans-serif;font-size:14px;font-weight:700;width:100%;margin-bottom:8px;display:flex;align-items:center;justify-content:center;gap:8px';
-  if (type === 'local') {
-    if(icon)  icon.textContent  = '\uD83D\uDD0C';
-    if(title) title.textContent = 'Run Local Server';
-    if(body)  body.innerHTML    = 'Run <code style="color:#14f195">node server.js</code> then open <strong style="color:#38bdf8">http://localhost:8080</strong>';
-    if(acts)  acts.innerHTML    = '';
-  } else {
-    if(icon)  icon.textContent  = '\uD83D\uDC7C';
-    if(title) title.textContent = 'Open in Phantom';
-    if(body)  body.innerHTML    = 'To play on mobile, open this page inside the <strong style="color:#e2eaf8">Phantom wallet browser.</strong><br><br>Tap below to open it automatically.';
-    if(acts)  acts.innerHTML =
-      '<button style="'+bs+';background:linear-gradient(135deg,#9945ff,#14f195);color:#fff" onclick="window.location.href=\''+deepLink+'\'">' +
-        '\uD83D\uDC7C Open in Phantom App</button>' +
-      '<button style="'+bs+';background:rgba(56,189,248,.08);border:1px solid rgba(56,189,248,.3);color:#38bdf8" onclick="copyPageUrl(this)">' +
-        '\uD83D\uDCCB Copy Link</button>' +
-      '<button style="'+bs+';background:none;border:1px solid #172034;color:#334d6e" onclick="closePhantomModal()">Close</button>';
+  // Detect which wallets are available
+  var hasPhantom  = !!(window.solana && window.solana.isPhantom);
+  var hasSolflare = !!(window.solflare && window.solflare.isSolflare);
+  var ps = document.getElementById('phantomStatus');
+  var ss = document.getElementById('solflareStatus');
+  if (ps) {
+    ps.textContent = hasPhantom ? 'DETECTED' : 'INSTALL';
+    ps.style.background   = hasPhantom ? 'rgba(20,241,149,.1)' : 'rgba(255,255,255,.06)';
+    ps.style.color        = hasPhantom ? '#14f195' : '#7090b8';
+    ps.style.borderColor  = hasPhantom ? 'rgba(20,241,149,.3)' : '#172034';
+  }
+  if (ss) {
+    ss.textContent = hasSolflare ? 'DETECTED' : 'INSTALL';
+    ss.style.background   = hasSolflare ? 'rgba(252,163,33,.15)' : 'rgba(255,255,255,.06)';
+    ss.style.color        = hasSolflare ? '#FCA321' : '#7090b8';
+    ss.style.borderColor  = hasSolflare ? 'rgba(252,163,33,.4)' : '#172034';
   }
 }
-function copyPageUrl(btn) {
-  var url = window.location.href;
-  if (navigator.clipboard) {
-    navigator.clipboard.writeText(url).then(function() {
-      btn.textContent = '\u2713 Copied!';
-      setTimeout(function(){ btn.textContent='\uD83D\uDCCB Copy Link'; }, 2500);
-    });
-  }
-}
-function closePhantomModal() {
-  var m = document.getElementById('phantomModal');
+// Keep old name as alias so existing calls work
+function openPhantomModal(type) { openWalletModal(); }
+
+function closeWalletModal() {
+  var m = document.getElementById('walletModal');
   if (m) m.style.display = 'none';
+}
+function closePhantomModal() { closeWalletModal(); }
+
+// Phantom connect via wallet modal
+async function connectPhantom() {
+  closeWalletModal();
+  if (window.solana && window.solana.isPhantom) {
+    setConnBtn('<span class="spin"></span> ...');
+    try {
+      var resp = await window.solana.connect();
+      pubkey = resp.publicKey.toString(); onConn();
+    } catch(e) { resetConnBtn(); toast('Rejected by Phantom', 'e'); }
+  } else {
+    // Deep link to open in Phantom browser
+    var url    = encodeURIComponent(window.location.href);
+    var link   = 'https://phantom.app/ul/browse/'+url+'?ref='+url;
+    window.location.href = link;
+  }
+}
+
+// Solflare connect
+async function connectSolflare() {
+  closeWalletModal();
+  if (window.solflare && window.solflare.isSolflare) {
+    setConnBtn('<span class="spin"></span> ...');
+    try {
+      await window.solflare.connect();
+      pubkey = window.solflare.publicKey.toString(); onConn();
+    } catch(e) { resetConnBtn(); toast('Rejected by Solflare', 'e'); }
+  } else {
+    window.open('https://solflare.com', '_blank');
+    toast('Install Solflare wallet, then try again', 'i');
+  }
 }
 
 // ── EVENT LISTENERS (no inline onclick) ──────────────
@@ -1049,6 +1104,16 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // Connect button
   document.getElementById('connectBtn').addEventListener('click', connectWallet);
+
+  // Wallet modal buttons
+  var wClose = document.getElementById('walletCloseBtn');
+  var wBack  = document.getElementById('walletBackdrop');
+  var wPh    = document.getElementById('connectPhantomBtn');
+  var wSf    = document.getElementById('connectSolflareBtn');
+  if (wClose) wClose.addEventListener('click', closeWalletModal);
+  if (wBack)  wBack.addEventListener('click', closeWalletModal);
+  if (wPh)    wPh.addEventListener('click', connectPhantom);
+  if (wSf)    wSf.addEventListener('click', connectSolflare);
 
   // Wallet dropdown toggle
   document.getElementById('walletBtn').addEventListener('click', toggleWalletMenu);
