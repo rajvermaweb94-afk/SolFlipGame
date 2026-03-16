@@ -327,7 +327,10 @@ const server = http.createServer(async (req, res) => {
     // GET /api/chat — get recent chat
     if (req.method === 'GET' && urlPath === '/api/chat') {
       const db = readDB();
-      return jsonOk(res, { messages: db.chat.slice(-60) });
+      // Count unique wallets active in last 5 minutes as online count
+      const fiveMinsAgo = Date.now() - 5 * 60 * 1000;
+      const onlineCount = Object.values(db.players || {}).filter(p => p.lastSeen && p.lastSeen > fiveMinsAgo).length;
+      return jsonOk(res, { messages: db.chat.slice(-60), onlineCount });
     }
 
     // GET /api/stats — public stats
