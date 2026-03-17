@@ -71,11 +71,24 @@ function defaultSettings() {
 
 // ── Apply env overrides (always wins) ────────────────────
 function applyEnv(s) {
-  if (process.env.HELIUS_RPC) { s.rpcUrl = process.env.HELIUS_RPC; s.network = 'custom'; }
+  if (process.env.HELIUS_RPC) {
+    s.rpcUrl  = process.env.HELIUS_RPC;
+    s.network = 'custom';
+  }
   if (process.env.TREASURY_KEY) {
     s.treasuryPrivKey = process.env.TREASURY_KEY;
     try {
       const kp = Keypair.fromSecretKey(bs58.decode(process.env.TREASURY_KEY));
+      s.treasuryAddress = kp.publicKey.toString();
+    } catch(e) {
+      console.error('[ENV] TREASURY_KEY decode failed:', e.message);
+      console.error('[ENV] Key length:', process.env.TREASURY_KEY.length);
+    }
+  }
+  // Also derive address from saved privKey if address still empty
+  if (!s.treasuryAddress && s.treasuryPrivKey) {
+    try {
+      const kp = Keypair.fromSecretKey(bs58.decode(s.treasuryPrivKey));
       s.treasuryAddress = kp.publicKey.toString();
     } catch(e) {}
   }
@@ -197,7 +210,22 @@ const server = http.createServer(async (req, res) => {
   // GET /api/settings
   if (req.method==='GET' && url==='/api/settings') {
     const pub = Object.assign({}, s);
+    // Final safety: if we have any private key, derive address now
+    const privKey = process.env.TREASURY_KEY || s.treasuryPrivKey;
+    if (privKey && !pub.treasuryAddress) {
+      try {
+        const kp = Keypair.fromSecretKey(bs58.decode(privKey));
+        pub.treasuryAddress = kp.publicKey.toString();
+        // Also persist this fix to DB
+        s.treasuryAddress = pub.treasuryAddress;
+        writeDB(db).catch(()=>{});
+        console.log('[SETTINGS] Treasury address auto-fixed:', pub.treasuryAddress);
+      } catch(e) {
+        console.error('[SETTINGS] Cannot derive treasury address:', e.message);
+      }
+    }
     delete pub.treasuryPrivKey; delete pub.adminPass;
+    console.log('[SETTINGS] Serving settings. treasuryAddress:', pub.treasuryAddress || 'EMPTY');
     return ok(res, { settings: pub });
   }
 
