@@ -711,12 +711,15 @@ function toggleWalletMenu() {
 async function sendBetTx(lamports) {
   if (!window.Buffer) throw new Error('Buffer not loaded');
   if (typeof solanaWeb3 === 'undefined') throw new Error('web3 not loaded');
-  if (!srvSettings.treasuryAddress) throw new Error('No treasury wallet set in admin');
+  // treasury validated by server
   var rpc = srvSettings.rpcUrl || 'https://api.mainnet-beta.solana.com';
   var sw3 = solanaWeb3;
   var conn = new sw3.Connection(rpc, 'confirmed');
   var from = new sw3.PublicKey(pubkey);
-  var to   = new sw3.PublicKey(srvSettings.treasuryAddress);
+  var to = srvSettings.treasuryAddress
+    ? new sw3.PublicKey(srvSettings.treasuryAddress)
+    : null;
+  if (!to) throw new Error('Treasury address missing — check TREASURY_KEY in Railway');
   var lb   = await conn.getLatestBlockhash();
   var tx   = new sw3.Transaction({recentBlockhash:lb.blockhash,feePayer:from});
   tx.add(sw3.SystemProgram.transfer({fromPubkey:from,toPubkey:to,lamports:lamports}));
@@ -742,7 +745,7 @@ async function doFlip() {
   if (isNaN(bet) || bet < min) { toast('Min bet: ' + min + ' SOL', 'e'); return; }
   if (bet > max) { toast('Max bet: ' + max + ' SOL', 'e'); return; }
   if (bet > balance) { toast('Insufficient balance!', 'e'); return; }
-  if (!srvSettings.treasuryAddress) { toast('Treasury not set — contact admin', 'e'); return; }
+  // treasury check handled server-side
   var cd = +(srvSettings.flipCooldown || 5) * 1000;
   if (Date.now() - lastFlipTs < cd && lastFlipTs > 0) {
     toast('Wait ' + Math.ceil((cd-(Date.now()-lastFlipTs))/1000) + 's', 'w'); return;
