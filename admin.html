@@ -1,4 +1,11 @@
-<!DOCTYPE html>
+function saveAdminPass() {
+  var u = document.getElementById('newUser').value.trim();
+  var p = document.getElementById('newPass').value.trim();
+  if (!u || !p) { toast('Enter new username and password', 'e'); return; }
+  postSettings({ adminUser: u, adminPass: p }, 'Admin password updated — use new credentials next login');
+  document.getElementById('newUser').value = '';
+  document.getElementById('newPass').value = '';
+}<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -814,6 +821,32 @@ function doLogout() {
 }
 
 
+// ── CORE: Post settings to server (persists to Railway DB) ──────────────
+function postSettings(payload, successMsg) {
+  var token = sessionStorage.getItem('sfToken') || '';
+  fetch('/api/admin/settings', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-admin-token': token },
+    body: JSON.stringify(payload)
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(d) {
+    if (d.ok) {
+      toast(successMsg || 'Saved!', 's');
+      // Update local settings cache
+      if (d.settings) {
+        applySettings(d.settings);
+      }
+    } else {
+      toast('Save failed: ' + (d.error || 'unknown'), 'e');
+    }
+  })
+  .catch(function() {
+    toast('Server unreachable — check Railway is running', 'e');
+  });
+}
+
+
 // ══ TABS ══
 function showTab(name, btn) {
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
@@ -950,9 +983,8 @@ function saveMode() {
   if (curMode==='weighted') obj.weightedRate = +document.getElementById('wtRate').value;
   if (curMode==='pattern')  obj.flipPattern  = document.getElementById('patInp').value;
   obj.patternIndex = 0;
-  DB.saveSettings(obj);
+  postSettings(obj, 'Flip mode: ' + curMode.toUpperCase() + ' applied');
   updModeBadge(); updDash();
-  toast('Flip mode: ' + curMode.toUpperCase() + ' applied', 's');
 }
 function updEdge(v) {
   const m = ((1-v/100)*2).toFixed(4);
@@ -960,17 +992,17 @@ function updEdge(v) {
   document.getElementById('multDisp').textContent = m+'×';
 }
 function saveEdge() {
-  DB.saveSettings({ houseEdge: +document.getElementById('edgeSlider').value });
-  updDash(); toast('House edge saved', 's');
+  postSettings({ houseEdge: +document.getElementById('edgeSlider').value }, 'House edge saved');
+  updDash();
 }
 function saveLimits() {
-  DB.saveSettings({
-    minBet:     +document.getElementById('minBet').value,
-    maxBet:     +document.getElementById('maxBet').value,
-    maxPayout:  +document.getElementById('maxPay').value,
+  postSettings({
+    minBet:      +document.getElementById('minBet').value,
+    maxBet:      +document.getElementById('maxBet').value,
+    maxPayout:   +document.getElementById('maxPay').value,
     flipCooldown:+document.getElementById('flipCD').value,
-  });
-  updDash(); toast('Bet limits saved', 's');
+  }, 'Bet limits saved to server');
+  updDash();
 }
 
 // ══ GAME SETTINGS ══
@@ -1017,12 +1049,10 @@ function saveGameSet() {
   }).catch(function(e){ toast('Server error: ' + e.message + ' — check server is running', 'e'); });
 }
 function saveChatSet() {
-  DB.saveSettings({
+  postSettings({
     chatEnabled: document.getElementById('chatEn').checked,
     msgCooldown: +document.getElementById('msgCD').value,
-    maxMsgLen:   +document.getElementById('maxML').value,
-  });
-  toast('Chat settings saved', 's');
+  }, 'Chat settings saved');
 }
 function changePass() {
   const s = DB.getSettings();
