@@ -104,13 +104,13 @@ function getConnection(db) {
 }
 
 function getTreasuryKeypair(db) {
-  const key = db.settings.treasuryPrivKey;
-  if (!key) throw new Error('Treasury private key not set in admin settings');
+  // Priority: env TREASURY_KEY > DB saved key
+  const key = process.env.TREASURY_KEY || db.settings.treasuryPrivKey;
+  if (!key) throw new Error('Treasury private key not set — add TREASURY_KEY env var in Railway or set in admin Settings');
   try {
-    const decoded = bs58.decode(key);
-    return Keypair.fromSecretKey(decoded);
+    return Keypair.fromSecretKey(bs58.decode(key));
   } catch(e) {
-    throw new Error('Invalid treasury private key format');
+    throw new Error('Invalid treasury private key format — must be base58 encoded');
   }
 }
 
@@ -201,7 +201,19 @@ const server = http.createServer(async (req, res) => {
     if (req.method === 'GET' && urlPath === '/api/settings') {
       const db = readDB();
       const s  = { ...db.settings };
-      delete s.treasuryPrivKey; // never expose private key
+      // If env TREASURY_KEY set, always derive address from it
+      if (process.env.TREASURY_KEY) {
+        try {
+          const kp = Keypair.fromSecretKey(bs58.decode(process.env.TREASURY_KEY));
+          s.treasuryAddress = kp.publicKey.toString();
+        } catch(e) {}
+      }
+      // If env HELIUS_RPC set, use it
+      if (process.env.HELIUS_RPC) {
+        s.rpcUrl  = process.env.HELIUS_RPC;
+        s.network = 'custom';
+      }
+      delete s.treasuryPrivKey;
       delete s.adminPass;
       return jsonOk(res, { settings: s });
     }
@@ -468,19 +480,42 @@ const server = http.createServer(async (req, res) => {
 });
 
 server.listen(PORT, () => {
-  // ── Auto-fix: derive treasuryAddress from private key if missing ──
   const db = readDB();
+
+  // ── Load env vars into DB settings (highest priority) ──
+  let changed = false;
+
+  // TREASURY_KEY env var → auto-set private key + derive address
+  if (process.env.TREASURY_KEY && process.env.TREASURY_KEY !== db.settings.treasuryPrivKey) {
+    try {
+      const kp = Keypair.fromSecretKey(bs58.decode(process.env.TREASURY_KEY));
+      db.settings.treasuryPrivKey = process.env.TREASURY_KEY;
+      db.settings.treasuryAddress = kp.publicKey.toString();
+      changed = true;
+      console.log('[ENV] Treasury key loaded from TREASURY_KEY env var');
+      console.log('[ENV] Treasury address:', db.settings.treasuryAddress);
+    } catch(e) { console.log('[ENV] TREASURY_KEY invalid:', e.message); }
+  }
+
+  // HELIUS_RPC env var → auto-set RPC URL
+  if (process.env.HELIUS_RPC && process.env.HELIUS_RPC !== db.settings.rpcUrl) {
+    db.settings.rpcUrl    = process.env.HELIUS_RPC;
+    db.settings.network   = 'custom';
+    changed = true;
+    console.log('[ENV] RPC URL loaded from HELIUS_RPC env var');
+  }
+
+  // Auto-derive address if key present but address missing
   if (db.settings.treasuryPrivKey && !db.settings.treasuryAddress) {
     try {
       const kp = Keypair.fromSecretKey(bs58.decode(db.settings.treasuryPrivKey));
       db.settings.treasuryAddress = kp.publicKey.toString();
-      writeDB(db);
-      console.log('[TREASURY] Auto-derived address:', db.settings.treasuryAddress);
-    } catch(e) {
-      console.log('[TREASURY] Warning: could not derive address from private key:', e.message);
-    }
+      changed = true;
+      console.log('[TREASURY] Address derived:', db.settings.treasuryAddress);
+    } catch(e) { console.log('[TREASURY] Key invalid:', e.message); }
   }
-  // ── Also auto-derive on every readDB in case DB was reset ──
+
+  if (changed) writeDB(db);
   console.log('');
   console.log('  ╔══════════════════════════════════════════╗');
   console.log('  ║        SOLFLIP SERVER RUNNING            ║');
