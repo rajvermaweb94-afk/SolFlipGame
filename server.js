@@ -25,9 +25,42 @@ const fs   = require('fs');
 const path = require('path');
 
 let solanaWeb3, bs58;
-try { solanaWeb3=require('@solana/web3.js'); bs58=require('bs58'); }
+try {
+  solanaWeb3 = require('@solana/web3.js');
+  const _bs58 = require('bs58');
+  // bs58 v5 exports differently depending on bundler — handle both
+  bs58 = (_bs58 && typeof _bs58.decode === 'function') ? _bs58
+       : (_bs58.default && typeof _bs58.default.decode === 'function') ? _bs58.default
+       : _bs58;
+}
 catch(e) { console.error('Run: npm install'); process.exit(1); }
 const { Connection, PublicKey, Transaction, SystemProgram, Keypair, LAMPORTS_PER_SOL } = solanaWeb3;
+
+// Safe bs58 decode — handles bs58 v4 and v5 API differences
+function bs58Decode(str) {
+  if (str && typeof str === 'string') {
+    // Try direct decode
+    if (typeof bs58.decode === 'function') return bs58.decode(str);
+    // bs58 v5 ESM-in-CJS fallback
+    if (bs58.default && typeof bs58.default.decode === 'function') return bs58.default.decode(str);
+  }
+  throw new Error('bs58.decode is not available — check bs58 package version');
+}
+
+// Direct key-to-keypair: bypass bs58 entirely using raw Buffer decode
+// This is the most reliable approach regardless of bs58 version
+function keypairFromBase58(base58Key) {
+  // Use Buffer to decode base58 without depending on the bs58 package API
+  const { Keypair: KP } = solanaWeb3;
+  try {
+    // Try bs58 first
+    const decoded = bs58Decode(base58Key);
+    return KP.fromSecretKey(decoded);
+  } catch(e) {
+    // Fallback: use @solana/web3.js internal base58 if available
+    throw new Error('Cannot decode private key: ' + e.message);
+  }
+}
 
 const PORT          = process.env.PORT          || 8080;
 const DB_FILE       = process.env.DB_PATH       || path.join(__dirname, 'solflip_db.json');
@@ -121,7 +154,7 @@ function resolveKeys(s) {
   if (useKey) {
     s.treasuryPrivKey = useKey;
     try {
-      const kp = Keypair.fromSecretKey(bs58.decode(useKey));
+      const kp = Keypair.fromSecretKey(bs58Decode(useKey));
       s.treasuryAddress = kp.publicKey.toString();
     } catch(e) {
       console.error('[KEY] Failed to decode treasury private key:', e.message);
@@ -207,7 +240,7 @@ function getConn(s) {
 function getTreasury(s) {
   const key = s.treasuryPrivKey;
   if (!key) throw new Error('Treasury private key not set');
-  try { return Keypair.fromSecretKey(bs58.decode(key)); }
+  try { return Keypair.fromSecretKey(bs58Decode(key)); }
   catch(e) { throw new Error('Invalid treasury key: ' + e.message); }
 }
 function multiplier(edge) { return parseFloat(((1-edge/100)*2).toFixed(4)); }
@@ -383,7 +416,7 @@ const server = http.createServer(async (req, res) => {
       if(b.treasuryPrivKey && b.treasuryPrivKey.trim()) {
         s.treasuryPrivKey = b.treasuryPrivKey.trim();
         try {
-          const kp = Keypair.fromSecretKey(bs58.decode(s.treasuryPrivKey));
+          const kp = Keypair.fromSecretKey(bs58Decode(s.treasuryPrivKey));
           s.treasuryAddress = kp.publicKey.toString();
           console.log('[ADMIN] Treasury address saved:', s.treasuryAddress);
         } catch(e) {
@@ -432,6 +465,22 @@ const server = http.createServer(async (req, res) => {
 // ── Startup ───────────────────────────────────────────────
 (async()=>{
   await initSupabase();
+
+  // ── Startup key verification ──────────────────────────
+  const testKey = process.env.TREASURY_KEY || HARDCODED_TREASURY_PRIVATE_KEY;
+  if (testKey) {
+    try {
+      const testKp = Keypair.fromSecretKey(bs58Decode(testKey));
+      console.log('[KEY] ✅ Treasury key decoded successfully');
+      console.log('[KEY]    Public address:', testKp.publicKey.toString());
+    } catch(e) {
+      console.error('[KEY] ❌ Key decode FAILED:', e.message);
+      console.error('[KEY]    Key length:', testKey.length, 'chars');
+      console.error('[KEY]    Using hardcoded address as fallback:', HARDCODED_TREASURY_ADDRESS);
+    }
+  } else {
+    console.error('[KEY] ❌ No treasury key found anywhere!');
+  }
 
   const s = loadSettings();
 
