@@ -2,39 +2,890 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>SolFlip — Solana Coin Flip</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 <style>
-  body{background:#060a12;display:flex;align-items:center;justify-content:center;
-    min-height:100vh;margin:0;font-family:sans-serif}
-  .loader{text-align:center;color:#14f195}
-  .dot{display:inline-block;width:8px;height:8px;background:#14f195;border-radius:50%;margin:0 3px;
-    animation:b .8s ease-in-out infinite}
-  .dot:nth-child(2){animation-delay:.15s}
-  .dot:nth-child(3){animation-delay:.3s}
-  @keyframes b{0%,80%,100%{transform:scale(0);opacity:.3}40%{transform:scale(1);opacity:1}}
+/* ── Reset & Variables ───────────────────────────── */
+:root {
+  --bg:       #04080f;
+  --bg2:      #080e1a;
+  --bg3:      #0c1424;
+  --border:   rgba(20,241,149,0.12);
+  --border2:  rgba(255,255,255,0.06);
+  --green:    #14f195;
+  --green2:   #0dc47a;
+  --gold:     #f5c542;
+  --gold2:    #e6a800;
+  --red:      #ff4d6d;
+  --blue:     #38bdf8;
+  --text:     #e2eaf8;
+  --text2:    #8899b4;
+  --text3:    #4d5f7a;
+  --glow:     0 0 30px rgba(20,241,149,0.25);
+  --glow-gold:0 0 30px rgba(245,197,66,0.35);
+  --radius:   14px;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { height: 100%; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Rajdhani', sans-serif;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ── Background FX ───────────────────────────────── */
+body::before {
+  content:'';
+  position:fixed; inset:0;
+  background:
+    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(20,241,149,0.07) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 40% at 80% 100%, rgba(56,189,248,0.05) 0%, transparent 50%);
+  pointer-events:none; z-index:0;
+}
+.grid-bg {
+  position:fixed; inset:0; z-index:0; pointer-events:none;
+  background-image:
+    linear-gradient(rgba(20,241,149,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(20,241,149,0.03) 1px, transparent 1px);
+  background-size: 50px 50px;
+  mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 0%, transparent 70%);
+}
+
+/* ── Layout ──────────────────────────────────────── */
+#app { position:relative; z-index:1; max-width:1200px; margin:0 auto; padding:0 16px 40px; }
+
+/* ── Header ──────────────────────────────────────── */
+header {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:20px 0 16px;
+  border-bottom:1px solid var(--border2);
+}
+.logo {
+  font-family:'Orbitron',monospace; font-size:22px; font-weight:900;
+  letter-spacing:.08em; color:var(--text);
+  display:flex; align-items:center; gap:6px;
+}
+.logo span { color:var(--green); }
+.logo-dot { width:8px;height:8px;background:var(--green);border-radius:50%;box-shadow:var(--glow); animation:pulse 2s ease-in-out infinite; }
+@keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(.8)} }
+
+.header-right { display:flex; align-items:center; gap:10px; }
+.net-badge {
+  font-size:10px; font-family:'Space Mono',monospace; font-weight:700;
+  letter-spacing:.12em; color:var(--green); background:rgba(20,241,149,0.08);
+  border:1px solid rgba(20,241,149,0.2); padding:4px 10px; border-radius:20px;
+}
+
+/* ── Wallet Button ───────────────────────────────── */
+.wallet-btn {
+  display:flex; align-items:center; gap:8px;
+  background:var(--bg3); border:1px solid var(--border);
+  color:var(--text); font-family:'Rajdhani',sans-serif; font-weight:700;
+  font-size:13px; letter-spacing:.04em; padding:8px 16px; border-radius:10px;
+  cursor:pointer; transition:all .2s; white-space:nowrap;
+}
+.wallet-btn:hover { border-color:var(--green); color:var(--green); background:rgba(20,241,149,0.05); }
+.wallet-btn.connected { border-color:rgba(20,241,149,0.3); color:var(--green); }
+.wallet-btn .w-dot { width:7px;height:7px;border-radius:50%;background:var(--text3); }
+.wallet-btn.connected .w-dot { background:var(--green); box-shadow:0 0 6px var(--green); }
+
+/* ── Stats Bar ───────────────────────────────────── */
+.stats-bar {
+  display:flex; align-items:center; gap:6px; flex-wrap:wrap;
+  padding:10px 0; border-bottom:1px solid var(--border2);
+  font-size:11px; font-family:'Space Mono',monospace; color:var(--text3);
+}
+.stat-item { display:flex; align-items:center; gap:5px; }
+.stat-val { color:var(--text2); font-weight:700; }
+.stat-sep { color:var(--border2); }
+
+/* ── Main Grid ───────────────────────────────────── */
+.main-grid {
+  display:grid;
+  grid-template-columns: 1fr 380px;
+  gap:16px; margin-top:16px;
+}
+@media (max-width:900px) { .main-grid { grid-template-columns:1fr; } }
+
+/* ── Game Card ───────────────────────────────────── */
+.card {
+  background:var(--bg2); border:1px solid var(--border2);
+  border-radius:var(--radius); padding:24px;
+}
+.card-title {
+  font-size:11px; font-family:'Space Mono',monospace; font-weight:700;
+  letter-spacing:.14em; text-transform:uppercase; color:var(--text3);
+  margin-bottom:18px;
+}
+
+/* ── Coin ────────────────────────────────────────── */
+.coin-wrap {
+  display:flex; justify-content:center; align-items:center;
+  padding:30px 0 24px; position:relative;
+}
+.coin-scene { perspective:600px; }
+.coin {
+  width:130px; height:130px; position:relative;
+  transform-style:preserve-3d; transition:transform .1s;
+}
+.coin.flipping { animation:coinFlip 1.8s ease-in-out forwards; }
+@keyframes coinFlip {
+  0%   { transform:rotateY(0deg) rotateX(0deg); }
+  15%  { transform:rotateY(0deg) rotateX(-20deg) translateY(-20px); }
+  50%  { transform:rotateY(720deg) rotateX(-20deg) translateY(-40px); }
+  85%  { transform:rotateY(1080deg) rotateX(0deg) translateY(-8px); }
+  100% { transform:rotateY(var(--final-rot)) rotateX(0deg) translateY(0px); }
+}
+.coin-face {
+  position:absolute; inset:0; border-radius:50%;
+  backface-visibility:hidden; display:flex; align-items:center; justify-content:center;
+  font-family:'Orbitron',monospace; font-weight:900; font-size:28px;
+  box-shadow:0 8px 32px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.15);
+}
+.coin-face.heads {
+  background:radial-gradient(circle at 35% 35%, #ffe169, #f5c542 45%, #c99a00);
+  color:#7a5800;
+}
+.coin-face.tails {
+  background:radial-gradient(circle at 35% 35%, #e0f2fe, #9ecfed 45%, #5b9bbf);
+  color:#1e4e6e; transform:rotateY(180deg);
+}
+.coin-face .coin-icon { font-size:42px; }
+.coin-ring {
+  position:absolute; inset:-6px; border-radius:50%;
+  border:2px solid rgba(245,197,66,0.3);
+  animation:ringPulse 3s ease-in-out infinite;
+}
+@keyframes ringPulse { 0%,100%{opacity:.3;transform:scale(1)} 50%{opacity:.7;transform:scale(1.04)} }
+.coin-glow {
+  position:absolute; inset:-20px; border-radius:50%;
+  background:radial-gradient(circle, rgba(245,197,66,0.15) 0%, transparent 70%);
+  pointer-events:none;
+}
+.coin-result-label {
+  text-align:center; margin-top:12px;
+  font-family:'Orbitron',monospace; font-size:14px; font-weight:700;
+  letter-spacing:.1em; opacity:0; transition:all .4s;
+}
+.coin-result-label.show { opacity:1; }
+.coin-result-label.win  { color:var(--green); text-shadow:0 0 20px rgba(20,241,149,.5); }
+.coin-result-label.lose { color:var(--red); }
+
+/* ── Pick Side ───────────────────────────────────── */
+.pick-row {
+  display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:16px;
+}
+.pick-btn {
+  display:flex; flex-direction:column; align-items:center; gap:6px;
+  background:var(--bg3); border:2px solid var(--border2);
+  border-radius:12px; padding:14px 10px; cursor:pointer;
+  transition:all .2s; font-family:'Rajdhani',sans-serif;
+}
+.pick-btn:hover { border-color:rgba(245,197,66,.4); background:rgba(245,197,66,.04); }
+.pick-btn.active {
+  border-color:var(--gold); background:rgba(245,197,66,.08);
+  box-shadow:0 0 20px rgba(245,197,66,.15);
+}
+.pick-btn .pb-icon { font-size:28px; }
+.pick-btn .pb-label {
+  font-size:14px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--text2);
+}
+.pick-btn.active .pb-label { color:var(--gold); }
+.pick-btn .pb-mult {
+  font-size:11px; font-family:'Space Mono',monospace; color:var(--text3);
+}
+.pick-btn.active .pb-mult { color:var(--text2); }
+
+/* ── Bet Controls ────────────────────────────────── */
+.bet-row {
+  display:flex; align-items:center; gap:8px; margin-bottom:10px;
+}
+.bet-input-wrap {
+  flex:1; display:flex; align-items:center;
+  background:var(--bg3); border:1px solid var(--border2);
+  border-radius:10px; padding:0 14px; gap:8px;
+  transition:border-color .2s;
+}
+.bet-input-wrap:focus-within { border-color:rgba(20,241,149,.3); }
+.bet-input-wrap .sol-sym { font-size:13px; font-weight:700; color:var(--green); font-family:'Space Mono',monospace; }
+.bet-input {
+  flex:1; background:none; border:none; outline:none;
+  color:var(--text); font-family:'Space Mono',monospace; font-size:16px;
+  font-weight:700; padding:12px 0;
+}
+.bet-quick {
+  display:flex; gap:6px; margin-bottom:14px; flex-wrap:wrap;
+}
+.bq-btn {
+  font-size:11px; font-family:'Space Mono',monospace; font-weight:700;
+  background:var(--bg3); border:1px solid var(--border2); color:var(--text2);
+  padding:5px 10px; border-radius:6px; cursor:pointer; transition:all .2s;
+  letter-spacing:.04em;
+}
+.bq-btn:hover { border-color:rgba(20,241,149,.3); color:var(--green); }
+
+.payout-preview {
+  display:flex; justify-content:space-between; align-items:center;
+  background:rgba(20,241,149,.04); border:1px solid rgba(20,241,149,.1);
+  border-radius:10px; padding:10px 14px; margin-bottom:14px; font-size:13px;
+}
+.pp-label { color:var(--text3); font-family:'Space Mono',monospace; font-size:11px; letter-spacing:.06em; }
+.pp-val   { color:var(--green); font-family:'Space Mono',monospace; font-weight:700; font-size:15px; }
+
+/* ── Flip Button ─────────────────────────────────── */
+.flip-btn {
+  width:100%; padding:16px; border-radius:12px; border:none; cursor:pointer;
+  font-family:'Orbitron',monospace; font-weight:700; font-size:14px;
+  letter-spacing:.1em; text-transform:uppercase;
+  background:linear-gradient(135deg, var(--green), var(--green2));
+  color:#04080f; transition:all .2s; position:relative; overflow:hidden;
+}
+.flip-btn::after {
+  content:''; position:absolute; inset:0;
+  background:linear-gradient(135deg, rgba(255,255,255,.15) 0%, transparent 60%);
+}
+.flip-btn:hover:not(:disabled) { transform:translateY(-2px); box-shadow:0 8px 30px rgba(20,241,149,.35); }
+.flip-btn:active:not(:disabled) { transform:translateY(0); }
+.flip-btn:disabled {
+  background:var(--bg3); color:var(--text3);
+  cursor:not-allowed; transform:none; box-shadow:none;
+}
+.flip-btn.loading { background:var(--bg3); color:var(--green); }
+
+/* ── Wallet Info ─────────────────────────────────── */
+.wallet-info {
+  display:flex; justify-content:space-between; align-items:center;
+  background:var(--bg3); border:1px solid var(--border2);
+  border-radius:10px; padding:10px 14px; margin-bottom:14px;
+  font-size:12px; font-family:'Space Mono',monospace;
+}
+.wi-addr { color:var(--text2); }
+.wi-bal  { color:var(--green); font-weight:700; }
+
+/* ── Right Panel ─────────────────────────────────── */
+.right-panel { display:flex; flex-direction:column; gap:12px; }
+
+/* ── Live Feed ───────────────────────────────────── */
+.feed-list { display:flex; flex-direction:column; gap:6px; max-height:240px; overflow-y:auto; }
+.feed-list::-webkit-scrollbar { width:3px; }
+.feed-list::-webkit-scrollbar-track { background:transparent; }
+.feed-list::-webkit-scrollbar-thumb { background:var(--border2); border-radius:3px; }
+.feed-item {
+  display:flex; align-items:center; justify-content:space-between;
+  background:var(--bg3); border:1px solid var(--border2);
+  border-radius:8px; padding:8px 12px; font-size:12px;
+  animation:fadeIn .3s ease-out;
+}
+@keyframes fadeIn { from{opacity:0;transform:translateY(-6px)} to{opacity:1;transform:translateY(0)} }
+.fi-left  { display:flex; align-items:center; gap:8px; }
+.fi-coin  { font-size:16px; }
+.fi-addr  { font-family:'Space Mono',monospace; font-size:10px; color:var(--text3); }
+.fi-pick  { font-size:11px; font-weight:700; letter-spacing:.04em; color:var(--text2); }
+.fi-right { text-align:right; }
+.fi-pnl   { font-family:'Space Mono',monospace; font-size:12px; font-weight:700; }
+.fi-pnl.win  { color:var(--green); }
+.fi-pnl.lose { color:var(--red); }
+.fi-time  { font-size:10px; color:var(--text3); }
+
+/* ── Chat ────────────────────────────────────────── */
+.chat-msgs {
+  height:160px; overflow-y:auto; display:flex; flex-direction:column;
+  gap:4px; padding:4px 0; margin-bottom:10px;
+}
+.chat-msgs::-webkit-scrollbar { width:3px; }
+.chat-msgs::-webkit-scrollbar-thumb { background:var(--border2); border-radius:3px; }
+.chat-msg  { font-size:12px; line-height:1.4; }
+.chat-msg .cm-name { font-weight:700; color:var(--blue); margin-right:4px; }
+.chat-msg .cm-text { color:var(--text2); }
+.chat-msg.system .cm-text { color:var(--text3); font-style:italic; }
+.chat-msg.game-event .cm-name { color:var(--green); }
+.chat-msg.game-event.lose-event .cm-name { color:var(--red); }
+.chat-input-row { display:flex; gap:6px; }
+.chat-input {
+  flex:1; background:var(--bg3); border:1px solid var(--border2);
+  border-radius:8px; padding:8px 12px; color:var(--text);
+  font-family:'Rajdhani',sans-serif; font-size:13px; outline:none;
+  transition:border-color .2s;
+}
+.chat-input:focus { border-color:rgba(20,241,149,.25); }
+.chat-send-btn {
+  background:rgba(20,241,149,.1); border:1px solid rgba(20,241,149,.2);
+  color:var(--green); border-radius:8px; padding:8px 14px; cursor:pointer;
+  font-family:'Rajdhani',sans-serif; font-weight:700; font-size:13px;
+  transition:all .2s;
+}
+.chat-send-btn:hover { background:rgba(20,241,149,.18); }
+
+/* ── Toast ───────────────────────────────────────── */
+#toast-wrap {
+  position:fixed; bottom:24px; left:50%; transform:translateX(-50%);
+  z-index:9999; display:flex; flex-direction:column; gap:8px; align-items:center;
+  pointer-events:none;
+}
+.toast {
+  padding:10px 20px; border-radius:10px; font-family:'Rajdhani',sans-serif;
+  font-weight:700; font-size:14px; letter-spacing:.04em;
+  backdrop-filter:blur(12px);
+  animation:toastIn .25s ease-out, toastOut .3s ease-in 2.7s forwards;
+  pointer-events:none;
+}
+.toast.s { background:rgba(20,241,149,.15); border:1px solid rgba(20,241,149,.3); color:var(--green); }
+.toast.e { background:rgba(255,77,109,.15); border:1px solid rgba(255,77,109,.3); color:var(--red); }
+.toast.w { background:rgba(245,197,66,.15); border:1px solid rgba(245,197,66,.3); color:var(--gold); }
+@keyframes toastIn  { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+@keyframes toastOut { from{opacity:1} to{opacity:0} }
+
+/* ── Result Overlay ──────────────────────────────── */
+#result-overlay {
+  display:none; position:fixed; inset:0; z-index:100;
+  background:rgba(4,8,15,.85); backdrop-filter:blur(8px);
+  align-items:center; justify-content:center;
+}
+#result-overlay.show { display:flex; animation:fadeIn .3s ease-out; }
+.result-card {
+  background:var(--bg2); border:1px solid var(--border2);
+  border-radius:20px; padding:40px; text-align:center;
+  max-width:340px; width:90%; animation:scaleIn .3s ease-out;
+}
+@keyframes scaleIn { from{transform:scale(.9);opacity:0} to{transform:scale(1);opacity:1} }
+.result-card.win-card  { border-color:rgba(20,241,149,.3); box-shadow:0 0 60px rgba(20,241,149,.12); }
+.result-card.lose-card { border-color:rgba(255,77,109,.2); }
+.result-emoji { font-size:64px; margin-bottom:8px; }
+.result-title {
+  font-family:'Orbitron',monospace; font-size:28px; font-weight:900;
+  letter-spacing:.08em; margin-bottom:4px;
+}
+.result-title.win  { color:var(--green); text-shadow:0 0 30px rgba(20,241,149,.4); }
+.result-title.lose { color:var(--red); }
+.result-sub { font-size:14px; color:var(--text2); margin-bottom:20px; font-family:'Space Mono',monospace; }
+.result-pnl {
+  font-family:'Orbitron',monospace; font-size:32px; font-weight:900;
+  margin-bottom:24px;
+}
+.result-pnl.win  { color:var(--green); }
+.result-pnl.lose { color:var(--red); }
+.result-close {
+  width:100%; padding:14px; border-radius:10px; border:none; cursor:pointer;
+  font-family:'Orbitron',monospace; font-weight:700; font-size:13px; letter-spacing:.08em;
+}
+.result-close.win  { background:linear-gradient(135deg,var(--green),var(--green2)); color:#04080f; }
+.result-close.lose { background:var(--bg3); color:var(--text); border:1px solid var(--border2); }
+
+/* ── Mobile tweaks ───────────────────────────────── */
+@media(max-width:520px) {
+  .logo { font-size:18px; }
+  .header-right { gap:6px; }
+  .net-badge { display:none; }
+  .card { padding:16px; }
+  .coin { width:110px; height:110px; }
+  .coin-face .coin-icon { font-size:34px; }
+}
 </style>
 </head>
 <body>
-<div class="loader">
-  <div style="font-size:24px;font-weight:700;letter-spacing:.1em;margin-bottom:14px;
-    font-family:monospace;color:#e2eaf8">SOL<span style="color:#14f195">FLIP</span></div>
-  <div><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
-</div>
-<script>
-(function() {
-  var ua = navigator.userAgent;
-  var isMobileUA = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobile|Tablet/i.test(ua);
-  var isSmallScreen = window.innerWidth <= 900;
-  var isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
-  var isMobile = isMobileUA || (isSmallScreen && isTouch);
+<div class="grid-bg"></div>
+<div id="app">
 
-  if (isMobile) {
-    window.location.replace('./mobile.html');
-  } else {
-    window.location.replace('./desktop.html');
+  <!-- Header -->
+  <header>
+    <div class="logo">
+      <div class="logo-dot"></div>
+      SOL<span>FLIP</span>
+    </div>
+    <div class="header-right">
+      <div class="net-badge">MAINNET</div>
+      <button class="wallet-btn" id="walletBtn" onclick="toggleWallet()">
+        <div class="w-dot" id="walletDot"></div>
+        <span id="walletBtnText">Connect Wallet</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Stats Bar -->
+  <div class="stats-bar" id="statsBar">
+    <div class="stat-item">🎲 <span class="stat-val" id="statFlips">—</span> flips</div>
+    <div class="stat-sep">·</div>
+    <div class="stat-item">🪙 <span class="stat-val" id="statVol">—</span> SOL volume</div>
+    <div class="stat-sep">·</div>
+    <div class="stat-item">👥 <span class="stat-val" id="statPlayers">—</span> players</div>
+    <div class="stat-sep">·</div>
+    <div class="stat-item">🟢 <span class="stat-val" id="statOnline">—</span> online</div>
+  </div>
+
+  <!-- Main Grid -->
+  <div class="main-grid">
+
+    <!-- Left: Game -->
+    <div>
+      <div class="card">
+        <div class="card-title">◈ Flip the Coin</div>
+
+        <!-- Wallet info when connected -->
+        <div class="wallet-info" id="walletInfo" style="display:none">
+          <span class="wi-addr" id="walletAddr">—</span>
+          <span class="wi-bal" id="walletBal">0.0000 SOL</span>
+        </div>
+
+        <!-- Coin -->
+        <div class="coin-wrap">
+          <div class="coin-scene">
+            <div class="coin-glow"></div>
+            <div class="coin" id="coin">
+              <div class="coin-face heads"><span class="coin-icon">◎</span></div>
+              <div class="coin-face tails"><span class="coin-icon">◈</span></div>
+            </div>
+            <div class="coin-ring"></div>
+          </div>
+        </div>
+        <div class="coin-result-label" id="coinLabel">—</div>
+
+        <!-- Pick -->
+        <div class="pick-row" style="margin-top:20px">
+          <div class="pick-btn active" id="pickHeads" onclick="setPick('heads')">
+            <span class="pb-icon">☀️</span>
+            <span class="pb-label">Heads</span>
+            <span class="pb-mult" id="multDisplay">1.92×</span>
+          </div>
+          <div class="pick-btn" id="pickTails" onclick="setPick('tails')">
+            <span class="pb-icon">🌙</span>
+            <span class="pb-label">Tails</span>
+            <span class="pb-mult">1.92×</span>
+          </div>
+        </div>
+
+        <!-- Bet -->
+        <div class="bet-row">
+          <div class="bet-input-wrap">
+            <span class="sol-sym">◎</span>
+            <input class="bet-input" id="betInput" type="number" value="0.01" step="0.001" min="0.001" max="0.5" oninput="updatePayout()">
+          </div>
+        </div>
+        <div class="bet-quick">
+          <button class="bq-btn" onclick="setBet(0.001)">0.001</button>
+          <button class="bq-btn" onclick="setBet(0.01)">0.01</button>
+          <button class="bq-btn" onclick="setBet(0.05)">0.05</button>
+          <button class="bq-btn" onclick="setBet(0.1)">0.1</button>
+          <button class="bq-btn" onclick="setBet(0.25)">0.25</button>
+          <button class="bq-btn" onclick="halfBet()">½</button>
+          <button class="bq-btn" onclick="doubleBet()">2×</button>
+          <button class="bq-btn" onclick="maxBet()">MAX</button>
+        </div>
+
+        <!-- Payout preview -->
+        <div class="payout-preview">
+          <div>
+            <div class="pp-label">POTENTIAL WIN</div>
+          </div>
+          <div class="pp-val" id="payoutPreview">+0.0192 SOL</div>
+        </div>
+
+        <!-- Flip button -->
+        <button class="flip-btn" id="flipBtn" onclick="doFlip()">
+          🎲 FLIP NOW
+        </button>
+      </div>
+    </div>
+
+    <!-- Right: Feed + Chat -->
+    <div class="right-panel">
+
+      <!-- Live Feed -->
+      <div class="card">
+        <div class="card-title">⚡ Live Feed</div>
+        <div class="feed-list" id="feedList">
+          <div style="text-align:center;color:var(--text3);font-size:12px;padding:20px;font-family:'Space Mono',monospace">
+            Waiting for flips...
+          </div>
+        </div>
+      </div>
+
+      <!-- Chat -->
+      <div class="card">
+        <div class="card-title">💬 Chat</div>
+        <div class="chat-msgs" id="chatMsgs"></div>
+        <div class="chat-input-row">
+          <input class="chat-input" id="chatInput" placeholder="Say something..." maxlength="120"
+            onkeydown="if(event.key==='Enter')sendChat()">
+          <button class="chat-send-btn" onclick="sendChat()">Send</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- Result Overlay -->
+<div id="result-overlay">
+  <div class="result-card" id="resultCard">
+    <div class="result-emoji" id="resultEmoji">🎲</div>
+    <div class="result-title" id="resultTitle">—</div>
+    <div class="result-sub" id="resultSub">—</div>
+    <div class="result-pnl" id="resultPnl">—</div>
+    <button class="result-close" id="resultClose" onclick="closeResult()">PLAY AGAIN</button>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast-wrap"></div>
+
+<!-- Solana Web3 -->
+<script src="https://unpkg.com/@solana/web3.js@1.95.8/lib/index.iife.min.js"></script>
+<script>
+// ── State ─────────────────────────────────────────────────
+let pubkey     = null;
+let balance    = 0;
+let pick       = 'heads';
+let flipping   = false;
+let lastFlipTs = 0;
+let settings   = {};
+let chatName   = 'Player' + Math.floor(Math.random()*9999);
+let chatCooldown = 0;
+
+// ── Init ──────────────────────────────────────────────────
+window.addEventListener('load', async () => {
+  await loadSettings();
+  await loadStats();
+  await loadFeed();
+  await loadChat();
+  updatePayout();
+  setInterval(loadStats, 15000);
+  setInterval(loadFeed,  8000);
+  setInterval(loadChat,  5000);
+  if (localStorage.getItem('sf_autoconnect') && window.solana?.isPhantom) {
+    try { await connectWallet(true); } catch(e) {}
   }
-})();
+});
+
+// ── API ───────────────────────────────────────────────────
+async function api(path, opts={}) {
+  const r = await fetch(path, {headers:{'Content-Type':'application/json'},...opts});
+  return r.json();
+}
+async function apiPost(path, data) {
+  return api(path, {method:'POST', body:JSON.stringify(data)});
+}
+
+async function loadSettings() {
+  const d = await api('/api/settings');
+  if (d.ok) {
+    settings = d.settings;
+    updatePayout();
+    document.querySelectorAll('.pb-mult').forEach(el => {
+      el.textContent = ((1-(settings.houseEdge||4)/100)*2).toFixed(2) + '×';
+    });
+  }
+}
+
+async function loadStats() {
+  const d = await api('/api/stats');
+  if (!d.ok) return;
+  document.getElementById('statFlips').textContent   = d.totalFlips.toLocaleString();
+  document.getElementById('statVol').textContent     = parseFloat(d.totalVolume||0).toFixed(2);
+  document.getElementById('statPlayers').textContent = d.totalPlayers.toLocaleString();
+}
+
+async function loadFeed() {
+  const d = await api('/api/stats');
+  if (!d.ok || !d.recentFlips?.length) return;
+  const list = document.getElementById('feedList');
+  list.innerHTML = d.recentFlips.slice(0,20).map(f => `
+    <div class="feed-item">
+      <div class="fi-left">
+        <span class="fi-coin">${f.result==='heads'?'☀️':'🌙'}</span>
+        <div>
+          <div class="fi-addr">${f.wallet.slice(0,6)}...${f.wallet.slice(-4)}</div>
+          <div class="fi-pick">${f.pick.toUpperCase()} → ${f.result.toUpperCase()}</div>
+        </div>
+      </div>
+      <div class="fi-right">
+        <div class="fi-pnl ${f.won?'win':'lose'}">${f.won?'+':''}${f.pnl.toFixed(4)} SOL</div>
+        <div class="fi-time">${timeAgo(f.ts)}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ── Chat ──────────────────────────────────────────────────
+async function loadChat() {
+  const d = await api('/api/chat');
+  if (!d.ok) return;
+  document.getElementById('statOnline').textContent = d.onlineCount || 1;
+  const msgs = document.getElementById('chatMsgs');
+  const wasBottom = msgs.scrollHeight - msgs.clientHeight <= msgs.scrollTop + 30;
+  msgs.innerHTML = d.messages.map(m => `
+    <div class="chat-msg ${m.system?'system':''} ${m.gameEvent?(m.text.includes('won')||m.text.includes('🎉')?'game-event':'game-event lose-event'):''}">
+      <span class="cm-name">${esc(m.name)}</span>
+      <span class="cm-text">${esc(m.text)}</span>
+    </div>
+  `).join('');
+  if (wasBottom) msgs.scrollTop = msgs.scrollHeight;
+}
+
+async function sendChat() {
+  const inp = document.getElementById('chatInput');
+  const text = inp.value.trim();
+  if (!text) return;
+  if (Date.now() < chatCooldown) { toast('Slow down!','w'); return; }
+  chatCooldown = Date.now() + (settings.msgCooldown||3)*1000;
+  inp.value = '';
+  const name = pubkey ? pubkey.slice(0,6)+'...'+pubkey.slice(-4) : chatName;
+  await apiPost('/api/chat', {name, text, wallet:pubkey||''});
+  await loadChat();
+}
+
+// ── Wallet ────────────────────────────────────────────────
+async function toggleWallet() {
+  if (pubkey) { disconnectWallet(); return; }
+  await connectWallet();
+}
+
+async function connectWallet(silent=false) {
+  if (!window.solana) {
+    if (!silent) window.open('https://phantom.app','_blank');
+    if (!silent) toast('Install Phantom wallet','w');
+    return;
+  }
+  try {
+    const resp = await window.solana.connect({onlyIfTrusted: silent});
+    pubkey = resp.publicKey.toString();
+    localStorage.setItem('sf_autoconnect','1');
+    await refreshBalance();
+    updateWalletUI();
+    toast('Wallet connected ✓','s');
+  } catch(e) {
+    if (!silent) toast('Wallet connection cancelled','w');
+  }
+}
+
+function disconnectWallet() {
+  pubkey = null; balance = 0;
+  localStorage.removeItem('sf_autoconnect');
+  if (window.solana?.disconnect) window.solana.disconnect().catch(()=>{});
+  updateWalletUI();
+  toast('Wallet disconnected','w');
+}
+
+async function refreshBalance() {
+  if (!pubkey) return;
+  const d = await api(`/api/balance?wallet=${pubkey}`);
+  if (d.ok) balance = d.balance;
+  updateWalletUI();
+}
+
+function updateWalletUI() {
+  const btn  = document.getElementById('walletBtn');
+  const dot  = document.getElementById('walletDot');
+  const info = document.getElementById('walletInfo');
+  const addr = document.getElementById('walletAddr');
+  const bal  = document.getElementById('walletBal');
+  if (pubkey) {
+    btn.classList.add('connected');
+    dot.style.background = 'var(--green)';
+    dot.style.boxShadow  = '0 0 6px var(--green)';
+    document.getElementById('walletBtnText').textContent = pubkey.slice(0,4)+'...'+pubkey.slice(-4);
+    info.style.display = 'flex';
+    addr.textContent   = pubkey.slice(0,8)+'...'+pubkey.slice(-6);
+    bal.textContent    = balance.toFixed(4)+' SOL';
+  } else {
+    btn.classList.remove('connected');
+    dot.style.background = 'var(--text3)';
+    dot.style.boxShadow  = 'none';
+    document.getElementById('walletBtnText').textContent = 'Connect Wallet';
+    info.style.display = 'none';
+  }
+}
+
+// ── Pick ──────────────────────────────────────────────────
+function setPick(p) {
+  pick = p;
+  document.getElementById('pickHeads').classList.toggle('active', p==='heads');
+  document.getElementById('pickTails').classList.toggle('active', p==='tails');
+  updatePayout();
+}
+
+// ── Bet Controls ──────────────────────────────────────────
+function updatePayout() {
+  const bet = parseFloat(document.getElementById('betInput').value) || 0;
+  const edge = settings.houseEdge || 4;
+  const multiplier = (1-edge/100)*2;
+  const payout = (bet * multiplier - bet).toFixed(4);
+  document.getElementById('payoutPreview').textContent = `+${payout} SOL`;
+}
+function setBet(v)   { document.getElementById('betInput').value = v; updatePayout(); }
+function halfBet()   { const v=parseFloat(document.getElementById('betInput').value)||0; setBet(Math.max(settings.minBet||0.001,(v/2).toFixed(4))); }
+function doubleBet() { const v=parseFloat(document.getElementById('betInput').value)||0; setBet(Math.min(settings.maxBet||0.5,(v*2).toFixed(4))); }
+function maxBet()    { setBet(settings.maxBet||0.5); }
+
+// ── Flip ──────────────────────────────────────────────────
+async function doFlip() {
+  if (flipping) return;
+  if (!pubkey) { toast('Connect your wallet first!','w'); return; }
+  if (!settings.treasuryAddress) { toast('Game not configured','e'); return; }
+
+  const bet = parseFloat(document.getElementById('betInput').value);
+  const min = settings.minBet || 0.001;
+  const max = settings.maxBet || 0.5;
+  if (isNaN(bet) || bet < min) { toast(`Min bet: ${min} SOL`,'w'); return; }
+  if (bet > max) { toast(`Max bet: ${max} SOL`,'w'); return; }
+  if (bet > balance) { toast('Insufficient balance!','e'); return; }
+
+  const cd = (settings.flipCooldown||5)*1000;
+  if (Date.now()-lastFlipTs < cd && lastFlipTs>0) {
+    toast(`Wait ${Math.ceil((cd-(Date.now()-lastFlipTs))/1000)}s`,'w'); return;
+  }
+
+  flipping = true;
+  lastFlipTs = Date.now();
+  const btn = document.getElementById('flipBtn');
+  btn.disabled = true;
+  btn.textContent = '⏳ Sending TX...';
+  btn.classList.add('loading');
+
+  // Hide previous result label
+  const label = document.getElementById('coinLabel');
+  label.className = 'coin-result-label';
+
+  try {
+    // 1. Send bet TX to treasury
+    const txSig = await sendBetTx(Math.round(bet * 1e9));
+
+    btn.textContent = '🎲 Flipping...';
+    // Animate coin
+    animateCoin();
+
+    // 2. Call server to resolve flip
+    const d = await apiPost('/api/flip', {wallet:pubkey, bet, pick, txSig});
+
+    await new Promise(r=>setTimeout(r,1900)); // wait for animation
+
+    if (!d.ok) throw new Error(d.error || 'Flip failed');
+
+    // Show result on coin
+    const coin = document.getElementById('coin');
+    coin.style.transform = d.result==='heads' ? 'rotateY(0deg)' : 'rotateY(180deg)';
+    label.textContent  = d.result.toUpperCase();
+    label.className    = 'coin-result-label show ' + (d.won?'win':'lose');
+
+    // Show result overlay
+    showResult(d, bet);
+
+    // Post to chat
+    const name = pubkey.slice(0,4)+'...'+pubkey.slice(-4);
+    if (d.won) {
+      await apiPost('/api/chat',{name,text:`🎉 Won +${d.payout.toFixed(4)} SOL on ${d.result.toUpperCase()}!`,wallet:pubkey,gameEvent:true});
+    } else {
+      await apiPost('/api/chat',{name,text:`🎰 Lost ${bet.toFixed(4)} SOL on ${d.result.toUpperCase()}`,wallet:pubkey,gameEvent:true});
+    }
+    await refreshBalance();
+    await loadFeed();
+    await loadChat();
+
+  } catch(e) {
+    console.error(e);
+    toast('TX Failed: '+e.message,'e');
+  } finally {
+    flipping = false;
+    btn.disabled  = false;
+    btn.textContent = '🎲 FLIP NOW';
+    btn.classList.remove('loading');
+  }
+}
+
+function animateCoin() {
+  const coin = document.getElementById('coin');
+  coin.style.setProperty('--final-rot', pick==='heads'?'1080deg':'1260deg');
+  coin.classList.remove('flipping');
+  void coin.offsetWidth; // reflow
+  coin.classList.add('flipping');
+  coin.addEventListener('animationend', ()=>coin.classList.remove('flipping'), {once:true});
+}
+
+function showResult(d, bet) {
+  const ov    = document.getElementById('result-overlay');
+  const card  = document.getElementById('resultCard');
+  const emoji = document.getElementById('resultEmoji');
+  const title = document.getElementById('resultTitle');
+  const sub   = document.getElementById('resultSub');
+  const pnl   = document.getElementById('resultPnl');
+  const close = document.getElementById('resultClose');
+
+  if (d.won) {
+    emoji.textContent = '🎉';
+    title.textContent = 'YOU WON!';
+    title.className   = 'result-title win';
+    sub.textContent   = `${d.result.toUpperCase()} · ${((1-(settings.houseEdge||4)/100)*2).toFixed(2)}× multiplier`;
+    pnl.textContent   = `+${d.payout.toFixed(4)} SOL`;
+    pnl.className     = 'result-pnl win';
+    card.className    = 'result-card win-card';
+    close.className   = 'result-close win';
+    close.textContent = '🎲 PLAY AGAIN';
+  } else {
+    emoji.textContent = '😔';
+    title.textContent = 'YOU LOST';
+    title.className   = 'result-title lose';
+    sub.textContent   = `${d.result.toUpperCase()} · Better luck next time`;
+    pnl.textContent   = `-${bet.toFixed(4)} SOL`;
+    pnl.className     = 'result-pnl lose';
+    card.className    = 'result-card lose-card';
+    close.className   = 'result-close lose';
+    close.textContent = '🎲 TRY AGAIN';
+  }
+  ov.classList.add('show');
+}
+
+function closeResult() {
+  document.getElementById('result-overlay').classList.remove('show');
+}
+
+// ── Send Bet Transaction ───────────────────────────────────
+async function sendBetTx(lamports) {
+  if (!window.solanaWeb3) throw new Error('Solana web3 not loaded');
+  if (!settings.treasuryAddress) throw new Error('Treasury address not set — check server config');
+
+  const sw3  = window.solanaWeb3;
+  const conn = new sw3.Connection(settings.rpcUrl || 'https://api.mainnet-beta.solana.com', 'confirmed');
+  const from = new sw3.PublicKey(pubkey);
+  const to   = new sw3.PublicKey(settings.treasuryAddress);
+
+  const {blockhash, lastValidBlockHeight} = await conn.getLatestBlockhash();
+  const tx = new sw3.Transaction({recentBlockhash:blockhash, feePayer:from});
+  tx.add(sw3.SystemProgram.transfer({fromPubkey:from, toPubkey:to, lamports}));
+
+  let sig;
+  try {
+    const r = await window.solana.signAndSendTransaction(tx);
+    sig = typeof r === 'string' ? r : r.signature;
+  } catch(e) {
+    const signed = await window.solana.signTransaction(tx);
+    sig = await conn.sendRawTransaction(signed.serialize(), {skipPreflight:false});
+  }
+  await conn.confirmTransaction({signature:sig, blockhash, lastValidBlockHeight}, 'confirmed');
+  return sig;
+}
+
+// ── Helpers ───────────────────────────────────────────────
+function toast(msg, type='s') {
+  const w = document.getElementById('toast-wrap');
+  const t = document.createElement('div');
+  t.className = 'toast '+type; t.textContent = msg;
+  w.appendChild(t);
+  setTimeout(()=>t.remove(), 3200);
+}
+
+function timeAgo(ts) {
+  const s = Math.floor((Date.now()-new Date(ts))/1000);
+  if (s<60)  return s+'s ago';
+  if (s<3600) return Math.floor(s/60)+'m ago';
+  return Math.floor(s/3600)+'h ago';
+}
+
+function esc(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
 </script>
 </body>
 </html>
