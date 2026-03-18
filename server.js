@@ -1,20 +1,31 @@
 /**
- * SolFlip — Backend Server with Supabase + Local JSON fallback
- *
- * ENV VARS (set in Railway Variables):
- *   SUPABASE_URL  = https://xxxx.supabase.co
- *   SUPABASE_KEY  = your-service-role-key  (NOT anon key)
- *   TREASURY_KEY  = base58-private-key       (optional, admin panel also works)
- *   HELIUS_RPC    = https://mainnet.helius-rpc.com/?api-key=xxx  (optional)
- *
- * SETTINGS are saved in solflip_settings.json (separate from game data).
- * This file persists across restarts and is NEVER reset by defaults.
+ * SolFlip — Backend Server
+ * ═══════════════════════════════════════════════════════════
+ *  STEP 1 — Fill in your keys below (lines 14-15)
+ *  STEP 2 — Deploy to Railway
+ *  That's it. No env vars needed. Settings persist permanently.
+ * ═══════════════════════════════════════════════════════════
  */
+
+// ╔══════════════════════════════════════════════════════════╗
+// ║              HARDCODED CONFIGURATION                     ║
+// ║  Fill these in. They are the permanent source of truth.  ║
+// ╚══════════════════════════════════════════════════════════╝
+const HARDCODED_TREASURY_PRIVATE_KEY = 'BXEFru2nf4fLukKDjTWhbYk2qR9P97uF9NrniYvU9BMts4o1Ndp2aksskmyWGj2QNstC7w1GbNzjKo8e7cCWW6A
+';  // ← Paste your base58 private key here
+const HARDCODED_RPC_URL              = 'https://mainnet.helius-rpc.com/?api-key=071fddd0-4ea8-4082-8d9e-aa6233124406
+';  // ← Paste your Helius RPC URL here
+//   example: 'https://mainnet.helius-rpc.com/?api-key=YOUR_KEY'
+//
+// These hardcoded values are used FIRST.
+// Railway env vars (TREASURY_KEY, HELIUS_RPC) override them if set.
+// Admin panel can also override them and saves to solflip_settings.json.
+// ════════════════════════════════════════════════════════════
+
 const http = require('http');
 const fs   = require('fs');
 const path = require('path');
 
-// Solana
 let solanaWeb3, bs58;
 try { solanaWeb3=require('@solana/web3.js'); bs58=require('bs58'); }
 catch(e) { console.error('Run: npm install'); process.exit(1); }
@@ -24,7 +35,7 @@ const PORT          = process.env.PORT          || 8080;
 const DB_FILE       = process.env.DB_PATH       || path.join(__dirname, 'solflip_db.json');
 const SETTINGS_FILE = process.env.SETTINGS_PATH || path.join(__dirname, 'solflip_settings.json');
 
-// ── Supabase ─────────────────────────────────────────────
+// ── Supabase (optional) ───────────────────────────────────
 let supabase = null;
 async function initSupabase() {
   if (!process.env.SUPABASE_URL || !process.env.SUPABASE_KEY) {
@@ -43,7 +54,6 @@ async function initSupabase() {
   }
 }
 
-// ── KV helpers (Supabase) ─────────────────────────────────
 async function kvGet(k) {
   if (!supabase) return null;
   try {
@@ -57,14 +67,14 @@ async function kvSet(k, v) {
   catch(e) { console.error('[DB] kvSet error:', e.message); }
 }
 
-// ── Default settings ─────────────────────────────────────
+// ── Base defaults (no keys) ───────────────────────────────
 function defaultSettings() {
   return {
     flipMode:'random', houseEdge:4, weightedRate:50,
     flipPattern:'H,T,H,H,T', patternIndex:0,
     minBet:0.001, maxBet:0.5, maxPayout:5, flipCooldown:5,
     network:'mainnet',
-    rpcUrl:   '',
+    rpcUrl: '',
     treasuryPrivKey: '',
     treasuryAddress: '',
     chatEnabled:true, msgCooldown:3, maxMsgLen:120,
@@ -73,74 +83,69 @@ function defaultSettings() {
   };
 }
 
-// ══════════════════════════════════════════════════════════
-// SETTINGS FILE — Dedicated persistent file for all settings
-// Never bundled with flips/players/chat so it survives resets
-// ══════════════════════════════════════════════════════════
-
-/**
- * Read settings from solflip_settings.json.
- * Saved values ALWAYS override defaults (Object.assign order matters).
- */
+// ── Settings file helpers ─────────────────────────────────
 function readSettingsFile() {
   try {
     if (fs.existsSync(SETTINGS_FILE)) {
       const saved = JSON.parse(fs.readFileSync(SETTINGS_FILE, 'utf8'));
       // saved values WIN over defaults
-      const merged = Object.assign({}, defaultSettings(), saved);
-      console.log('[SETTINGS] Loaded from', SETTINGS_FILE);
-      return merged;
+      return Object.assign({}, defaultSettings(), saved);
     }
   } catch(e) {
-    console.error('[SETTINGS] Read error:', e.message, '— using defaults');
+    console.error('[SETTINGS] Read error:', e.message);
   }
-  console.log('[SETTINGS] No settings file yet — using defaults');
   return defaultSettings();
 }
 
-/**
- * Write settings to solflip_settings.json.
- * Always call this when settings change so they persist across restarts.
- */
 function writeSettingsFile(s) {
   try {
     fs.writeFileSync(SETTINGS_FILE, JSON.stringify(s, null, 2), 'utf8');
-    console.log('[SETTINGS] Saved to', SETTINGS_FILE,
-      '| treasury:', s.treasuryAddress || 'NOT SET',
-      '| rpc:', s.rpcUrl ? 'custom' : 'default');
+    console.log('[SETTINGS] Saved →', SETTINGS_FILE);
   } catch(e) {
     console.error('[SETTINGS] Write error:', e.message);
   }
 }
 
-// ── Apply env overrides at RUNTIME only ──────────────────
-// Env vars take precedence but are NOT written back to the settings file,
-// so admin-panel values are always preserved on restart.
-function applyEnv(s) {
-  if (process.env.HELIUS_RPC) {
-    s.rpcUrl  = process.env.HELIUS_RPC;
-    s.network = 'custom';
-  }
-  if (process.env.TREASURY_KEY) {
-    s.treasuryPrivKey = process.env.TREASURY_KEY;
+// ── Key resolution: hardcode → env → settings file ────────
+// Priority (highest to lowest):
+//   1. Railway env vars (TREASURY_KEY, HELIUS_RPC)
+//   2. Hardcoded constants at top of this file
+//   3. Admin panel saves (solflip_settings.json)
+function resolveKeys(s) {
+  // ENV VARS win over everything
+  const envKey = process.env.TREASURY_KEY || '';
+  const envRpc = process.env.HELIUS_RPC   || '';
+
+  // Hardcoded constants win over saved settings
+  const useKey = envKey || HARDCODED_TREASURY_PRIVATE_KEY || s.treasuryPrivKey || '';
+  const useRpc = envRpc || HARDCODED_RPC_URL              || s.rpcUrl          || '';
+
+  if (useKey) {
+    s.treasuryPrivKey = useKey;
     try {
-      const kp = Keypair.fromSecretKey(bs58.decode(process.env.TREASURY_KEY));
+      const kp = Keypair.fromSecretKey(bs58.decode(useKey));
       s.treasuryAddress = kp.publicKey.toString();
     } catch(e) {
-      console.error('[ENV] TREASURY_KEY decode failed:', e.message);
+      console.error('[KEY] Failed to decode treasury private key:', e.message);
+      console.error('[KEY] Make sure it is a valid base58-encoded Solana private key');
     }
   }
-  // Derive address from stored private key if address is empty
-  if (!s.treasuryAddress && s.treasuryPrivKey) {
-    try {
-      const kp = Keypair.fromSecretKey(bs58.decode(s.treasuryPrivKey));
-      s.treasuryAddress = kp.publicKey.toString();
-    } catch(e) {}
+
+  if (useRpc) {
+    s.rpcUrl  = useRpc;
+    s.network = 'custom';
   }
+
   return s;
 }
 
-// ── Read/Write game data (flips, players, chat) ────────────
+// ── Load settings (used on every request) ─────────────────
+function loadSettings() {
+  const s = readSettingsFile();
+  return resolveKeys(s);  // apply hardcode + env on top
+}
+
+// ── Game data (flips, players, chat) ──────────────────────
 async function readGameData() {
   let data = { flips:[], players:{}, chat:[] };
   if (supabase) {
@@ -155,7 +160,7 @@ async function readGameData() {
   } else {
     try {
       if (fs.existsSync(DB_FILE)) {
-        const saved = JSON.parse(fs.readFileSync(DB_FILE,'utf8'));
+        const saved = JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
         data.flips   = saved.flips   || [];
         data.players = saved.players || {};
         data.chat    = saved.chat    || [];
@@ -176,40 +181,39 @@ async function writeGameData(data) {
       return;
     } catch(e) { console.error('[DB] write error:', e.message); }
   }
-  try { fs.writeFileSync(DB_FILE, JSON.stringify(data,null,2)); }
+  try { fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2)); }
   catch(e) { console.error('[DB] local write error:', e.message); }
 }
 
-// ── readDB / writeDB ──────────────────────────────────────
 async function readDB() {
   const data = await readGameData();
-  const s    = readSettingsFile();
-  applyEnv(s);
+  const s    = loadSettings();
   return { settings: s, ...data };
 }
 
 async function writeDB(db) {
+  // Save settings to dedicated file
   writeSettingsFile(db.settings);
   if (supabase) { try { await kvSet('settings', db.settings); } catch(e) {} }
   await writeGameData({ flips: db.flips, players: db.players, chat: db.chat });
 }
 
-// ── Solana ────────────────────────────────────────────────
+// ── Solana helpers ────────────────────────────────────────
 function getConn(s) {
   const url = s.rpcUrl || 'https://api.mainnet-beta.solana.com';
   return new Connection(url, 'confirmed');
 }
 function getTreasury(s) {
   const key = s.treasuryPrivKey;
-  if (!key) throw new Error('Treasury private key not set — save it in Admin → Settings tab');
+  if (!key) throw new Error('Treasury private key not set');
   try { return Keypair.fromSecretKey(bs58.decode(key)); }
-  catch(e) { throw new Error('Invalid treasury key — must be base58 encoded'); }
+  catch(e) { throw new Error('Invalid treasury key: ' + e.message); }
 }
 function multiplier(edge) { return parseFloat(((1-edge/100)*2).toFixed(4)); }
 function resolveFlip(s, txSig) {
   if (s.flipMode==='forceHeads') return 'heads';
   if (s.flipMode==='forceTails') return 'tails';
-  if (s.flipMode==='weighted') return Math.random()<(s.weightedRate/100)?'heads':'tails';
+  if (s.flipMode==='weighted')   return Math.random()<(s.weightedRate/100)?'heads':'tails';
   if (s.flipMode==='pattern') {
     const pat=(s.flipPattern||'H,T').split(',').map(x=>x.trim().toUpperCase());
     const idx=(s.patternIndex||0)%pat.length; s.patternIndex=idx+1;
@@ -230,7 +234,7 @@ const MIME={'.html':'text/html','.js':'application/javascript','.css':'text/css'
   '.json':'application/json','.png':'image/png','.jpg':'image/jpeg',
   '.svg':'image/svg+xml','.ico':'image/x-icon','.webmanifest':'application/manifest+json'};
 
-// ── Server ────────────────────────────────────────────────
+// ── HTTP Server ───────────────────────────────────────────
 const server = http.createServer(async (req, res) => {
   const url = req.url.split('?')[0];
 
@@ -239,6 +243,7 @@ const server = http.createServer(async (req, res) => {
     res.end(); return;
   }
 
+  // Static files
   if (!url.startsWith('/api/')) {
     const fp = path.join(__dirname, url==='/'?'index.html':url);
     fs.readFile(fp,(e,d)=>{
@@ -248,14 +253,16 @@ const server = http.createServer(async (req, res) => {
     }); return;
   }
 
-  // ── API ───────────────────────────────────────────────
   const db = await readDB();
   const s  = db.settings;
 
-  // GET /api/settings
+  // GET /api/settings — used by frontend to get treasury address and game config
   if (req.method==='GET' && url==='/api/settings') {
     const pub = Object.assign({}, s);
-    delete pub.treasuryPrivKey; delete pub.adminPass;
+    delete pub.treasuryPrivKey;
+    delete pub.adminPass;
+    // Log so you can verify in Railway logs
+    console.log('[API] /api/settings → treasuryAddress:', pub.treasuryAddress || 'EMPTY ⚠️');
     return ok(res, { settings: pub });
   }
 
@@ -303,6 +310,7 @@ const server = http.createServer(async (req, res) => {
     const b = await body(req);
     const {wallet,bet,pick,txSig} = b;
     if(!wallet||!bet||!pick||!txSig) return err(res,'Missing fields');
+    if(!s.treasuryAddress) return err(res,'Treasury not configured on server');
     if(db.players[wallet]?.banned) return err(res,'Wallet is banned');
     if(bet<s.minBet) return err(res,`Min bet: ${s.minBet} SOL`);
     if(bet>s.maxBet) return err(res,`Max bet: ${s.maxBet} SOL`);
@@ -362,41 +370,29 @@ const server = http.createServer(async (req, res) => {
     const expected = 'sf_'+Buffer.from(s.adminPass||'admin123').toString('base64');
     if(auth!==expected) return err(res,'Unauthorized',401);
 
-    // GET admin settings (full view for admin UI)
     if(req.method==='GET'&&url==='/api/admin/settings') {
       const adminView = Object.assign({}, s);
-      delete adminView.treasuryPrivKey; // never expose private key
+      delete adminView.treasuryPrivKey;
       return ok(res,{settings: adminView});
     }
 
-    // POST admin settings — SAVE IMMEDIATELY AND PERMANENTLY
     if(req.method==='POST'&&url==='/api/admin/settings') {
       const b=await body(req);
-
-      // Apply all incoming fields to current settings
       Object.assign(s, b);
-
-      // If private key provided, derive and store the treasury address
       if(b.treasuryPrivKey && b.treasuryPrivKey.trim()) {
         s.treasuryPrivKey = b.treasuryPrivKey.trim();
         try {
           const kp = Keypair.fromSecretKey(bs58.decode(s.treasuryPrivKey));
           s.treasuryAddress = kp.publicKey.toString();
-          console.log('[SETTINGS] Treasury address derived:', s.treasuryAddress);
+          console.log('[ADMIN] Treasury address saved:', s.treasuryAddress);
         } catch(e) {
           return err(res,'Invalid private key — must be base58 encoded');
         }
       }
-
-      // Env vars always win at runtime
-      applyEnv(s);
-
-      // ✅ WRITE TO DEDICATED SETTINGS FILE — persists across all restarts
+      // Re-apply hardcode+env so they still win
+      resolveKeys(s);
       writeSettingsFile(s);
-
-      // Also push to Supabase if available
       if (supabase) { try { await kvSet('settings', s); } catch(e) {} }
-
       const resp = Object.assign({}, s);
       delete resp.treasuryPrivKey;
       return ok(res,{settings: resp});
@@ -422,7 +418,7 @@ const server = http.createServer(async (req, res) => {
     if(req.method==='GET'&&url==='/api/admin/treasury/balance'){
       try{
         const addr=s.treasuryAddress;
-        if(!addr) return err(res,'No treasury address — save your private key in Admin → Settings');
+        if(!addr) return err(res,'Treasury not set');
         const bal=await getConn(s).getBalance(new PublicKey(addr));
         return ok(res,{balance:bal/LAMPORTS_PER_SOL,address:addr});
       }catch(e){return err(res,e.message);}
@@ -432,33 +428,37 @@ const server = http.createServer(async (req, res) => {
   return err(res,'Unknown endpoint',404);
 });
 
+// ── Startup ───────────────────────────────────────────────
 (async()=>{
   await initSupabase();
 
-  const s = readSettingsFile();
-  applyEnv(s);
+  const s = loadSettings();
 
-  // Create settings file on first run so it's visible
-  if (!fs.existsSync(SETTINGS_FILE)) {
-    writeSettingsFile(s);
-  }
+  // Write settings file on every startup so the address is always stored
+  writeSettingsFile(s);
 
   server.listen(PORT,()=>{
+    const keySource = process.env.TREASURY_KEY ? 'env var' :
+                      HARDCODED_TREASURY_PRIVATE_KEY ? 'hardcoded' :
+                      s.treasuryPrivKey ? 'settings file' : 'NOT SET ❌';
     console.log('');
-    console.log('╔══════════════════════════════════════════╗');
-    console.log('║        SOLFLIP SERVER RUNNING            ║');
-    console.log('╠══════════════════════════════════════════╣');
-    console.log(`║  Port:     ${PORT}                            ║`);
-    console.log(`║  DB:       ${supabase?'Supabase ✅           ':'Local JSON ⚠️           '}║`);
-    console.log(`║  Settings: ${fs.existsSync(SETTINGS_FILE)?'Loaded ✅                 ':'Defaults (first run)      '}║`);
-    console.log(`║  Treasury: ${s.treasuryAddress?'SET ✅                    ':'NOT SET ❌                '}║`);
-    console.log(`║  RPC:      ${s.rpcUrl?'Custom ✅                 ':'Public mainnet (slow)     '}║`);
-    console.log('╚══════════════════════════════════════════╝');
-    if(!s.treasuryAddress) {
-      console.log('\n⚠️  Go to Admin → Settings tab:');
-      console.log('    1. Enter your Helius RPC URL');
-      console.log('    2. Enter your treasury wallet private key (base58)');
-      console.log('    3. Click SAVE — will persist in solflip_settings.json\n');
+    console.log('╔══════════════════════════════════════════════════╗');
+    console.log('║           SOLFLIP SERVER RUNNING                 ║');
+    console.log('╠══════════════════════════════════════════════════╣');
+    console.log(`║  Port:     ${PORT}                                    ║`);
+    console.log(`║  DB:       ${supabase?'Supabase ✅ ':'Local JSON  '}                         ║`);
+    console.log(`║  Treasury: ${s.treasuryAddress ? s.treasuryAddress.slice(0,18)+'...' : 'NOT SET ❌            '}  ║`);
+    console.log(`║  Key src:  ${keySource.padEnd(38)}║`);
+    console.log(`║  RPC:      ${(s.rpcUrl||'public mainnet (slow)').slice(0,38).padEnd(38)}║`);
+    console.log('╚══════════════════════════════════════════════════╝');
+    if (!s.treasuryAddress) {
+      console.log('');
+      console.log('⚠️  Treasury is NOT SET. Players cannot flip!');
+      console.log('   FIX: Open server.js and fill in line 14:');
+      console.log('   const HARDCODED_TREASURY_PRIVATE_KEY = \'YOUR_BASE58_KEY\';');
+      console.log('');
+    } else {
+      console.log(`\n✅ Ready! Treasury: ${s.treasuryAddress}\n`);
     }
   });
 })();
