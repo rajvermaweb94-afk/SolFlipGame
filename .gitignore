@@ -1,3 +1,5 @@
-node_modules
+node_modules/
+*.json.bak
 solflip_db.json
-package-lock.json
+solflip_settings.json
+.env
