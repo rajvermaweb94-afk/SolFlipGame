@@ -11,11 +11,9 @@
 // ║              HARDCODED CONFIGURATION                     ║
 // ║  Fill these in. They are the permanent source of truth.  ║
 // ╚══════════════════════════════════════════════════════════╝
-const HARDCODED_TREASURY_PRIVATE_KEY = 'BXEFru2nf4fLukKDjTWhbYk2qR9P97uF9NrniYvU9BMts4o1Ndp2aksskmyWGj2QNstC7w1GbNzjKo8e7cCWW6A
-';  // ← Paste your base58 private key here
-const HARDCODED_RPC_URL              = 'https://mainnet.helius-rpc.com/?api-key=071fddd0-4ea8-4082-8d9e-aa6233124406
-';  // ← Paste your Helius RPC URL here
-//   example: 'https://mainnet.helius-rpc.com/?api-key=YOUR_KEY'
+const HARDCODED_TREASURY_PRIVATE_KEY = 'BXEFru2nf4fLukKDjTWhbYk2qR9P97uF9NrniYvU9BMts4o1Ndp2aksskmyWGj2QNstC7w1GbNzjKo8e7cCWW6A';
+const HARDCODED_RPC_URL              = 'https://mainnet.helius-rpc.com/?api-key=071fddd0-4ea8-4082-8d9e-aa6233124406';
+const HARDCODED_TREASURY_ADDRESS     = '51BqQWM3HUS9GFTTSu4aGT9YVSEQE2efkwe131gaQvpv';
 //
 // These hardcoded values are used FIRST.
 // Railway env vars (TREASURY_KEY, HELIUS_RPC) override them if set.
@@ -127,8 +125,11 @@ function resolveKeys(s) {
       s.treasuryAddress = kp.publicKey.toString();
     } catch(e) {
       console.error('[KEY] Failed to decode treasury private key:', e.message);
-      console.error('[KEY] Make sure it is a valid base58-encoded Solana private key');
+      s.treasuryAddress = HARDCODED_TREASURY_ADDRESS;
     }
+  }
+  if (!s.treasuryAddress && HARDCODED_TREASURY_ADDRESS) {
+    s.treasuryAddress = HARDCODED_TREASURY_ADDRESS;
   }
 
   if (useRpc) {
